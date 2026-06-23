@@ -1,0 +1,136 @@
+{
+  "generated_at": "2026-06-23T06:43:08.954671+09:00",
+  "latest_time": "2026-06-23T06:30:00+09:00",
+  "source": "JMA AMeDAS latest_time.txt / data/map/{YYYYMMDDHHMM00}.json 10-minute observations",
+  "days": 7,
+  "slots": [
+    {
+      "id": "20260617_min",
+      "label": "17日最低",
+      "element": "min",
+      "target_date": "2026-06-17",
+      "target_time": "2026-06-17",
+      "status": "available",
+      "source": "daily"
+    },
+    {
+      "id": "20260617_max",
+      "label": "17日最高",
+      "element": "max",
+      "target_date": "2026-06-17",
+      "target_time": "2026-06-17",
+      "status": "available",
+      "source": "daily"
+    },
+    {
+      "id": "20260618_min",
+      "label": "18日最低",
+      "element": "min",
+      "target_date": "2026-06-18",
+      "target_time": "2026-06-18",
+      "status": "available",
+      "source": "daily"
+    },
+    {
+      "id": "20260618_max",
+      "label": "18日最高",
+      "element": "max",
+      "target_date": "2026-06-18",
+      "target_time": "2026-06-18",
+      "status": "available",
+      "source": "daily"
+    },
+    {
+      "id": "20260619_min",
+      "label": "19日最低",
+      "element": "min",
+      "target_date": "2026-06-19",
+      "target_time": "2026-06-19",
+      "status": "available",
+      "source": "daily"
+    },
+    {
+      "id": "20260619_max",
+      "label": "19日最高",
+      "element": "max",
+      "target_date": "2026-06-19",
+      "target_time": "2026-06-19",
+      "status": "available",
+      "source": "daily"
+    },
+    {
+      "id": "20260620_min",
+      "label": "20日最低",
+      "element": "min",
+      "target_date": "2026-06-20",
+      "target_time": "2026-06-20",
+      "status": "available",
+      "source": "daily"
+    },
+    {
+      "id": "20260620_max",
+      "label": "20日最高",
+      "element": "max",
+      "target_date": "2026-06-20",
+      "target_time": "2026-06-20",
+      "status": "available",
+      "source": "daily"
+    },
+    {
+      "id": "20260621_min",
+      "label": "21日最低",
+      "element": "min",
+      "target_date": "2026-06-21",
+      "target_time": "2026-06-21",
+      "status": "available",
+      "source": "daily"
+    },
+    {
+      "id": "20260621_max",
+      "label": "21日最高",
+      "element": "max",
+      "target_date": "2026-06-21",
+      "target_time": "2026-06-21",
+      "status": "available",
+      "source": "daily"
+    },
+    {
+      "id": "20260622_min",
+      "label": "22日最低",
+      "element": "min",
+      "target_date": "2026-06-22",
+      "target_time": "2026-06-22",
+      "status": "available",
+      "source": "saved_realtime"
+    },
+    {
+      "id": "20260622_max",
+      "label": "22日最高",
+      "element": "max",
+      "target_date": "2026-06-22",
+      "target_time": "2026-06-22",
+      "status": "available",
+      "source": "saved_realtime"
+    },
+    {
+      "id": "20260623_min",
+      "label": "23日最低",
+      "element": "min",
+      "target_date": "2026-06-23",
+      "target_time": "2026-06-23T06:30:00+09:00",
+      "status": "available",
+      "source": "realtime"
+    },
+    {
+      "id": "20260623_max",
+      "label": "23日最高",
+      "element": "max",
+      "target_date": "2026-06-23",
+      "target_time": "2026-06-23T06:30:00+09:00",
+      "status": "available",
+      "source": "realtime"
+    }
+  ],
+  "station_count": 154,
+  "grid_count": 31296
+}

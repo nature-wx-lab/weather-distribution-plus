@@ -1,0 +1,557 @@
+{
+  "generated_at": "2026-06-22T20:53:38+09:00",
+  "source": "JMA天気分布予報 targetTimes.json / *_temp_point / wm / r3 / s3 GeoJSON / VPFD地域時系列予報",
+  "service_date": "2026-06-22",
+  "daily_rollover_hour_jst": 6,
+  "today_max_cutoff_hour_jst": 14,
+  "slots": [
+    {
+      "id": "today_min",
+      "label": "22日最低",
+      "element": "min",
+      "target_date": "2026-06-22",
+      "status": "unavailable",
+      "message": "予測対象時刻を過ぎているため、実況の最低気温を参照ください。"
+    },
+    {
+      "id": "today_max",
+      "label": "22日最高",
+      "element": "max",
+      "target_date": "2026-06-22",
+      "status": "stale",
+      "message": "予測対象時刻を過ぎているため、実況の最高気温を参照ください。"
+    },
+    {
+      "id": "tomorrow_min",
+      "label": "23日最低",
+      "element": "min",
+      "target_date": "2026-06-23",
+      "basetime": "20260622080000",
+      "validtime": "20260623000000",
+      "status": "available",
+      "message": ""
+    },
+    {
+      "id": "tomorrow_max",
+      "label": "23日最高",
+      "element": "max",
+      "target_date": "2026-06-23",
+      "basetime": "20260622080000",
+      "validtime": "20260623090000",
+      "status": "available",
+      "message": ""
+    }
+  ],
+  "vpfd": {
+    "index": "vpfd_index.json",
+    "cached_class10_count": 142
+  },
+  "layers": {
+    "daily": {
+      "label": "日最低/最高",
+      "data_type": "temperature",
+      "slots": [
+        {
+          "id": "today_min",
+          "label": "22日最低",
+          "element": "min",
+          "target_date": "2026-06-22",
+          "status": "unavailable",
+          "message": "予測対象時刻を過ぎているため、実況の最低気温を参照ください。"
+        },
+        {
+          "id": "today_max",
+          "label": "22日最高",
+          "element": "max",
+          "target_date": "2026-06-22",
+          "status": "stale",
+          "message": "予測対象時刻を過ぎているため、実況の最高気温を参照ください。"
+        },
+        {
+          "id": "tomorrow_min",
+          "label": "23日最低",
+          "element": "min",
+          "target_date": "2026-06-23",
+          "basetime": "20260622080000",
+          "validtime": "20260623000000",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "tomorrow_max",
+          "label": "23日最高",
+          "element": "max",
+          "target_date": "2026-06-23",
+          "basetime": "20260622080000",
+          "validtime": "20260623090000",
+          "status": "available",
+          "message": ""
+        }
+      ]
+    },
+    "temp3h": {
+      "label": "3時間気温",
+      "data_type": "temperature",
+      "slots": [
+        {
+          "id": "temp3h_20260622090000",
+          "label": "22日18時",
+          "element": "temp",
+          "target_date": "2026-06-22",
+          "basetime": "20260622080000",
+          "validtime": "20260622090000",
+          "status": "stale",
+          "message": "予測対象時刻を過ぎています。必要に応じて実況も確認してください。"
+        },
+        {
+          "id": "temp3h_20260622120000",
+          "label": "22日21時",
+          "element": "temp",
+          "target_date": "2026-06-22",
+          "basetime": "20260622080000",
+          "validtime": "20260622120000",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "temp3h_20260622150000",
+          "label": "23日00時",
+          "element": "temp",
+          "target_date": "2026-06-23",
+          "basetime": "20260622080000",
+          "validtime": "20260622150000",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "temp3h_20260622180000",
+          "label": "23日03時",
+          "element": "temp",
+          "target_date": "2026-06-23",
+          "basetime": "20260622080000",
+          "validtime": "20260622180000",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "temp3h_20260622210000",
+          "label": "23日06時",
+          "element": "temp",
+          "target_date": "2026-06-23",
+          "basetime": "20260622080000",
+          "validtime": "20260622210000",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "temp3h_20260623000000",
+          "label": "23日09時",
+          "element": "temp",
+          "target_date": "2026-06-23",
+          "basetime": "20260622080000",
+          "validtime": "20260623000000",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "temp3h_20260623030000",
+          "label": "23日12時",
+          "element": "temp",
+          "target_date": "2026-06-23",
+          "basetime": "20260622080000",
+          "validtime": "20260623030000",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "temp3h_20260623060000",
+          "label": "23日15時",
+          "element": "temp",
+          "target_date": "2026-06-23",
+          "basetime": "20260622080000",
+          "validtime": "20260623060000",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "temp3h_20260623090000",
+          "label": "23日18時",
+          "element": "temp",
+          "target_date": "2026-06-23",
+          "basetime": "20260622080000",
+          "validtime": "20260623090000",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "temp3h_20260623120000",
+          "label": "23日21時",
+          "element": "temp",
+          "target_date": "2026-06-23",
+          "basetime": "20260622080000",
+          "validtime": "20260623120000",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "temp3h_20260623150000",
+          "label": "24日00時",
+          "element": "temp",
+          "target_date": "2026-06-24",
+          "basetime": "20260622080000",
+          "validtime": "20260623150000",
+          "status": "available",
+          "message": ""
+        }
+      ]
+    },
+    "weather3h": {
+      "label": "3時間天気",
+      "data_type": "weather",
+      "slots": [
+        {
+          "id": "weather3h_20260622120000",
+          "label": "22日21時",
+          "element": "weather",
+          "target_date": "2026-06-22",
+          "basetime": "20260622080000",
+          "validtime": "20260622120000",
+          "interval_label": "6月22日18時〜21時",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "weather3h_20260622150000",
+          "label": "23日00時",
+          "element": "weather",
+          "target_date": "2026-06-23",
+          "basetime": "20260622080000",
+          "validtime": "20260622150000",
+          "interval_label": "6月22日21時〜23日00時",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "weather3h_20260622180000",
+          "label": "23日03時",
+          "element": "weather",
+          "target_date": "2026-06-23",
+          "basetime": "20260622080000",
+          "validtime": "20260622180000",
+          "interval_label": "6月23日00時〜03時",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "weather3h_20260622210000",
+          "label": "23日06時",
+          "element": "weather",
+          "target_date": "2026-06-23",
+          "basetime": "20260622080000",
+          "validtime": "20260622210000",
+          "interval_label": "6月23日03時〜06時",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "weather3h_20260623000000",
+          "label": "23日09時",
+          "element": "weather",
+          "target_date": "2026-06-23",
+          "basetime": "20260622080000",
+          "validtime": "20260623000000",
+          "interval_label": "6月23日06時〜09時",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "weather3h_20260623030000",
+          "label": "23日12時",
+          "element": "weather",
+          "target_date": "2026-06-23",
+          "basetime": "20260622080000",
+          "validtime": "20260623030000",
+          "interval_label": "6月23日09時〜12時",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "weather3h_20260623060000",
+          "label": "23日15時",
+          "element": "weather",
+          "target_date": "2026-06-23",
+          "basetime": "20260622080000",
+          "validtime": "20260623060000",
+          "interval_label": "6月23日12時〜15時",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "weather3h_20260623090000",
+          "label": "23日18時",
+          "element": "weather",
+          "target_date": "2026-06-23",
+          "basetime": "20260622080000",
+          "validtime": "20260623090000",
+          "interval_label": "6月23日15時〜18時",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "weather3h_20260623120000",
+          "label": "23日21時",
+          "element": "weather",
+          "target_date": "2026-06-23",
+          "basetime": "20260622080000",
+          "validtime": "20260623120000",
+          "interval_label": "6月23日18時〜21時",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "weather3h_20260623150000",
+          "label": "24日00時",
+          "element": "weather",
+          "target_date": "2026-06-24",
+          "basetime": "20260622080000",
+          "validtime": "20260623150000",
+          "interval_label": "6月23日21時〜24日00時",
+          "status": "available",
+          "message": ""
+        }
+      ]
+    },
+    "precip3h": {
+      "label": "3時間降水量",
+      "data_type": "precipitation",
+      "slots": [
+        {
+          "id": "precip3h_20260622120000",
+          "label": "22日21時",
+          "element": "precip3h",
+          "target_date": "2026-06-22",
+          "basetime": "20260622080000",
+          "validtime": "20260622120000",
+          "interval_label": "6月22日18時〜21時",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "precip3h_20260622150000",
+          "label": "23日00時",
+          "element": "precip3h",
+          "target_date": "2026-06-23",
+          "basetime": "20260622080000",
+          "validtime": "20260622150000",
+          "interval_label": "6月22日21時〜23日00時",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "precip3h_20260622180000",
+          "label": "23日03時",
+          "element": "precip3h",
+          "target_date": "2026-06-23",
+          "basetime": "20260622080000",
+          "validtime": "20260622180000",
+          "interval_label": "6月23日00時〜03時",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "precip3h_20260622210000",
+          "label": "23日06時",
+          "element": "precip3h",
+          "target_date": "2026-06-23",
+          "basetime": "20260622080000",
+          "validtime": "20260622210000",
+          "interval_label": "6月23日03時〜06時",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "precip3h_20260623000000",
+          "label": "23日09時",
+          "element": "precip3h",
+          "target_date": "2026-06-23",
+          "basetime": "20260622080000",
+          "validtime": "20260623000000",
+          "interval_label": "6月23日06時〜09時",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "precip3h_20260623030000",
+          "label": "23日12時",
+          "element": "precip3h",
+          "target_date": "2026-06-23",
+          "basetime": "20260622080000",
+          "validtime": "20260623030000",
+          "interval_label": "6月23日09時〜12時",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "precip3h_20260623060000",
+          "label": "23日15時",
+          "element": "precip3h",
+          "target_date": "2026-06-23",
+          "basetime": "20260622080000",
+          "validtime": "20260623060000",
+          "interval_label": "6月23日12時〜15時",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "precip3h_20260623090000",
+          "label": "23日18時",
+          "element": "precip3h",
+          "target_date": "2026-06-23",
+          "basetime": "20260622080000",
+          "validtime": "20260623090000",
+          "interval_label": "6月23日15時〜18時",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "precip3h_20260623120000",
+          "label": "23日21時",
+          "element": "precip3h",
+          "target_date": "2026-06-23",
+          "basetime": "20260622080000",
+          "validtime": "20260623120000",
+          "interval_label": "6月23日18時〜21時",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "precip3h_20260623150000",
+          "label": "24日00時",
+          "element": "precip3h",
+          "target_date": "2026-06-24",
+          "basetime": "20260622080000",
+          "validtime": "20260623150000",
+          "interval_label": "6月23日21時〜24日00時",
+          "status": "available",
+          "message": ""
+        }
+      ]
+    },
+    "snow3h": {
+      "label": "3時間降雪量",
+      "data_type": "snowfall",
+      "slots": [
+        {
+          "id": "snow3h_20260622120000",
+          "label": "22日21時",
+          "element": "snow3h",
+          "target_date": "2026-06-22",
+          "basetime": "20260622080000",
+          "validtime": "20260622120000",
+          "interval_label": "6月22日18時〜21時",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "snow3h_20260622150000",
+          "label": "23日00時",
+          "element": "snow3h",
+          "target_date": "2026-06-23",
+          "basetime": "20260622080000",
+          "validtime": "20260622150000",
+          "interval_label": "6月22日21時〜23日00時",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "snow3h_20260622180000",
+          "label": "23日03時",
+          "element": "snow3h",
+          "target_date": "2026-06-23",
+          "basetime": "20260622080000",
+          "validtime": "20260622180000",
+          "interval_label": "6月23日00時〜03時",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "snow3h_20260622210000",
+          "label": "23日06時",
+          "element": "snow3h",
+          "target_date": "2026-06-23",
+          "basetime": "20260622080000",
+          "validtime": "20260622210000",
+          "interval_label": "6月23日03時〜06時",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "snow3h_20260623000000",
+          "label": "23日09時",
+          "element": "snow3h",
+          "target_date": "2026-06-23",
+          "basetime": "20260622080000",
+          "validtime": "20260623000000",
+          "interval_label": "6月23日06時〜09時",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "snow3h_20260623030000",
+          "label": "23日12時",
+          "element": "snow3h",
+          "target_date": "2026-06-23",
+          "basetime": "20260622080000",
+          "validtime": "20260623030000",
+          "interval_label": "6月23日09時〜12時",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "snow3h_20260623060000",
+          "label": "23日15時",
+          "element": "snow3h",
+          "target_date": "2026-06-23",
+          "basetime": "20260622080000",
+          "validtime": "20260623060000",
+          "interval_label": "6月23日12時〜15時",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "snow3h_20260623090000",
+          "label": "23日18時",
+          "element": "snow3h",
+          "target_date": "2026-06-23",
+          "basetime": "20260622080000",
+          "validtime": "20260623090000",
+          "interval_label": "6月23日15時〜18時",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "snow3h_20260623120000",
+          "label": "23日21時",
+          "element": "snow3h",
+          "target_date": "2026-06-23",
+          "basetime": "20260622080000",
+          "validtime": "20260623120000",
+          "interval_label": "6月23日18時〜21時",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "snow3h_20260623150000",
+          "label": "24日00時",
+          "element": "snow3h",
+          "target_date": "2026-06-24",
+          "basetime": "20260622080000",
+          "validtime": "20260623150000",
+          "interval_label": "6月23日21時〜24日00時",
+          "status": "available",
+          "message": ""
+        }
+      ]
+    }
+  }
+}
