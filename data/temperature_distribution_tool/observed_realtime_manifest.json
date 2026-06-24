@@ -1,27 +1,9 @@
 {
-  "generated_at": "2026-06-24T19:36:45.003189+09:00",
-  "latest_time": "2026-06-24T19:20:00+09:00",
+  "generated_at": "2026-06-25T02:37:04.335368+09:00",
+  "latest_time": "2026-06-25T02:20:00+09:00",
   "source": "JMA AMeDAS latest_time.txt / data/map/{YYYYMMDDHHMM00}.json 10-minute observations",
   "days": 7,
   "slots": [
-    {
-      "id": "20260618_min",
-      "label": "18日最低",
-      "element": "min",
-      "target_date": "2026-06-18",
-      "target_time": "2026-06-18",
-      "status": "available",
-      "source": "daily"
-    },
-    {
-      "id": "20260618_max",
-      "label": "18日最高",
-      "element": "max",
-      "target_date": "2026-06-18",
-      "target_time": "2026-06-18",
-      "status": "available",
-      "source": "daily"
-    },
     {
       "id": "20260619_min",
       "label": "19日最低",
@@ -117,16 +99,34 @@
       "label": "24日最低",
       "element": "min",
       "target_date": "2026-06-24",
-      "target_time": "2026-06-24T19:20:00+09:00",
+      "target_time": "2026-06-24",
       "status": "available",
-      "source": "realtime"
+      "source": "daily"
     },
     {
       "id": "20260624_max",
       "label": "24日最高",
       "element": "max",
       "target_date": "2026-06-24",
-      "target_time": "2026-06-24T19:20:00+09:00",
+      "target_time": "2026-06-24",
+      "status": "available",
+      "source": "daily"
+    },
+    {
+      "id": "20260625_min",
+      "label": "25日最低",
+      "element": "min",
+      "target_date": "2026-06-25",
+      "target_time": "2026-06-25T02:20:00+09:00",
+      "status": "available",
+      "source": "realtime"
+    },
+    {
+      "id": "20260625_max",
+      "label": "25日最高",
+      "element": "max",
+      "target_date": "2026-06-25",
+      "target_time": "2026-06-25T02:20:00+09:00",
       "status": "available",
       "source": "realtime"
     }
