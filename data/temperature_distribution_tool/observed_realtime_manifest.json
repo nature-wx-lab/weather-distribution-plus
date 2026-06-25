@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-06-26T02:38:57.839617+09:00",
-  "latest_time": "2026-06-26T02:30:00+09:00",
+  "generated_at": "2026-06-26T08:05:04.783157+09:00",
+  "latest_time": "2026-06-26T07:50:00+09:00",
   "source": "JMA AMeDAS latest_time.txt / data/map/{YYYYMMDDHHMM00}.json 10-minute observations",
   "days": 7,
   "slots": [
@@ -117,7 +117,7 @@
       "label": "26日最低",
       "element": "min",
       "target_date": "2026-06-26",
-      "target_time": "2026-06-26T02:30:00+09:00",
+      "target_time": "2026-06-26T07:50:00+09:00",
       "status": "available",
       "source": "realtime"
     },
@@ -126,7 +126,7 @@
       "label": "26日最高",
       "element": "max",
       "target_date": "2026-06-26",
-      "target_time": "2026-06-26T02:30:00+09:00",
+      "target_time": "2026-06-26T07:50:00+09:00",
       "status": "available",
       "source": "realtime"
     }
