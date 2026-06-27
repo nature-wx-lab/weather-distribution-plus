@@ -3,10 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>天気分布予報プラス | Nature Wx Lab</title>
-    <meta name="description" content="天気分布予報プラスは、気象庁データをもとに予測・実況・平均との差・前日差を地図で比較できるNature Wx Labの公開ツールです。" />
-    <link rel="canonical" href="https://nature-wx-lab.github.io/weather-distribution-plus/" />
-  <link rel="stylesheet" href="./styles.css?v=20260627-audit1" />
+    <title>天気分布予報プラス ローカル試作</title>
+  <link rel="stylesheet" href="./styles.css?v=20260627-realtime-layers1" />
   </head>
   <body>
     <header class="topbar">
@@ -50,8 +48,8 @@
           <button type="button" data-source="observed">実況</button>
         </div>
 
-        <div class="control-block">
-          <span>予測レイヤ</span>
+        <div class="control-block layer-control-block">
+          <span id="layerControlHeading">予測レイヤ</span>
           <select id="forecastLayerSelect" class="visually-hidden" aria-label="予測レイヤ">
             <option value="daily">日最低・日最高</option>
             <option value="temp3h">3時間気温</option>
@@ -113,6 +111,13 @@
               <span class="layer-label">3時間<br />降雪量</span>
             </button>
           </div>
+          <div id="observedLayerButtons" class="observed-layer-buttons" aria-label="実況レイヤ" hidden>
+            <button type="button" data-observed-layer="temp">リアルタイム<br />気温</button>
+            <button type="button" data-observed-layer="precip1h">1時間<br />降水量</button>
+            <button type="button" data-observed-layer="wind">風向・風速</button>
+            <button type="button" data-observed-layer="weather">天気</button>
+            <button type="button" data-observed-layer="sunshine">日照時間</button>
+          </div>
         </div>
 
         <label class="visually-hidden">
@@ -155,9 +160,11 @@
           </select>
         </label>
 
-        <div class="toggle-row single">
+        <div class="toggle-row share-actions">
           <button id="downloadButton" type="button">PNG保存</button>
+          <button id="copyLinkButton" type="button">リンクコピー</button>
         </div>
+        <p id="copyLinkStatus" class="copy-link-status" role="status" aria-live="polite"></p>
 
         <label class="check-row">
           <input id="placeLabelsToggle" type="checkbox" checked />
@@ -190,7 +197,6 @@
       <section class="map-panel">
         <section class="timeline-control map-timeline" aria-label="対象時刻">
           <div class="timeline-row">
-            <button id="currentObservedButton" class="current-observed-button" type="button" hidden>現在</button>
             <button id="timelinePrevButton" type="button" aria-label="前へ">◀</button>
             <div class="timeline-range-wrap">
               <div id="timelineTicks" class="timeline-ticks" aria-hidden="true"></div>
@@ -259,6 +265,6 @@
       出典: 気象庁「天気分布予報」GeoJSON、気象庁日別値、気象庁アメダス10分値から作成した地点統計。平均値は地点統計をIDW補間した暫定値。地図境界データ: dataofjapan/land、Natural Earth系 countries GeoJSON。
     </footer>
 
-  <script src="./app.js?v=20260627-audit1" defer></script>
+  <script src="./app.js?v=20260627-realtime-layers1" defer></script>
   </body>
 </html>

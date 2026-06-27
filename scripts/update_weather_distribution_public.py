@@ -108,6 +108,13 @@ def main() -> None:
     ])
     run([
         py,
+        "scripts/update_suikei_realtime_tiles.py",
+        "--out-dir", str(DATA_DIR),
+        "--workers", "4",
+        "--keep-slots", "1",
+    ])
+    run([
+        py,
         "scripts/update_temperature_distribution_extremes.py",
         "--days", "8",
         "--out-dir", str(DATA_DIR),

@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-06-27T21:56:41.080794Z",
+  "source": "JMA estimated weather distribution (推計気象分布)",
+  "source_target_times": "https://www.jma.go.jp/bosai/jmatile/data/suikeikishou/targetTimes.json",
+  "basetime": "20260627210000",
+  "validtime": "20260627210000",
+  "tile_size": 512,
+  "available_zooms": [
+    8
+  ],
+  "display_min_zoom": 4,
+  "display_max_zoom": 12,
+  "native_zoom": 8,
+  "availability": true,
+  "resolution_note": "Official ~1 km analysis pixels; native z=8 tiles are scaled outside the native zoom.",
+  "bounds": {
+    "west": 118.0,
+    "south": 20.0,
+    "east": 150.0,
+    "north": 48.0
+  },
+  "layers": {
+    "weather": {
+      "source_element": "wthr",
+      "tile_template": "suikei_tiles/20260627210000/weather/{z}/{x}/{y}.png",
+      "tile_count": 169,
+      "visible_tile_count": 40
+    },
+    "sunshine": {
+      "source_element": "suns1h",
+      "tile_template": "suikei_tiles/20260627210000/sunshine/{z}/{x}/{y}.png",
+      "tile_count": 169,
+      "visible_tile_count": 40
+    }
+  }
+}

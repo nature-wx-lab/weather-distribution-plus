@@ -173,6 +173,116 @@ def latlon_decimal(parts: list[float | int]) -> float:
     return float(parts[0]) + float(parts[1]) / 60.0
 
 
+def observation_value(row: dict, key: str) -> tuple[float | None, int | None]:
+    """Return the value and JMA's raw quality code without inventing semantics for it."""
+    item = row.get(key)
+    if not isinstance(item, list) or not item:
+        return None, None
+    value = item[0]
+    quality = item[1] if len(item) > 1 else None
+    try:
+        parsed_value = None if value is None else float(value)
+    except (TypeError, ValueError):
+        parsed_value = None
+    try:
+        parsed_quality = None if quality is None else int(quality)
+    except (TypeError, ValueError):
+        parsed_quality = None
+    return parsed_value, parsed_quality
+
+
+def build_latest_station_observations(
+    latest: datetime,
+    payload: dict,
+    amedas_table: dict,
+) -> tuple[dict, list[dict[str, str]]]:
+    """Build a stable, station-level feed for realtime temperature, rain and wind."""
+    stations = []
+    csv_rows: list[dict[str, str]] = []
+    counts = {"temperature": 0, "precipitation_1h": 0, "wind": 0}
+    for amedas_id in sorted(payload):
+        row = payload.get(amedas_id)
+        meta = amedas_table.get(amedas_id)
+        if not isinstance(row, dict) or not isinstance(meta, dict):
+            continue
+        if "lat" not in meta or "lon" not in meta:
+            continue
+        temperature, temperature_quality = observation_value(row, "temp")
+        precipitation, precipitation_quality = observation_value(row, "precipitation1h")
+        wind_speed, wind_speed_quality = observation_value(row, "wind")
+        wind_direction_code, wind_direction_quality = observation_value(row, "windDirection")
+        wind_direction_deg = None
+        if wind_direction_code is not None and 0 <= wind_direction_code <= 16:
+            wind_direction_deg = (wind_direction_code % 16) * 22.5
+        if all(value is None for value in (temperature, precipitation, wind_speed, wind_direction_code)):
+            continue
+        if temperature is not None:
+            counts["temperature"] += 1
+        if precipitation is not None:
+            counts["precipitation_1h"] += 1
+        if wind_speed is not None and wind_direction_code is not None:
+            counts["wind"] += 1
+        station = {
+            "amedas_id": str(amedas_id),
+            "name": str(meta.get("kjName") or meta.get("enName") or amedas_id),
+            "longitude": round(latlon_decimal(meta["lon"]), 6),
+            "latitude": round(latlon_decimal(meta["lat"]), 6),
+            "elevation_m": meta.get("alt"),
+            "observed_at": latest.isoformat(),
+            "temperature_c": temperature,
+            "temperature_quality": temperature_quality,
+            "precipitation_1h_mm": precipitation,
+            "precipitation_1h_quality": precipitation_quality,
+            "wind_speed_ms": wind_speed,
+            "wind_speed_quality": wind_speed_quality,
+            "wind_direction_code": wind_direction_code,
+            "wind_direction_deg": wind_direction_deg,
+            "wind_direction_quality": wind_direction_quality,
+        }
+        stations.append(station)
+        csv_rows.append({key: "" if value is None else str(value) for key, value in station.items()})
+    document = {
+        "schema_version": 1,
+        "generated_at": datetime.now(JST).isoformat(),
+        "latest_time": latest.isoformat(),
+        "source": "JMA AMeDAS data/map 10-minute observations",
+        "quality_note": "Quality fields are unmodified numeric codes supplied by JMA; null means unavailable.",
+        "elements": {
+            "temperature": {"field": "temperature_c", "unit": "degC", "station_count": counts["temperature"]},
+            "precipitation_1h": {"field": "precipitation_1h_mm", "unit": "mm", "station_count": counts["precipitation_1h"]},
+            "wind_speed": {"field": "wind_speed_ms", "unit": "m/s", "station_count": counts["wind"]},
+            "wind_direction": {"field": "wind_direction_deg", "unit": "degree", "station_count": counts["wind"]},
+        },
+        "station_count": len(stations),
+        "stations": stations,
+    }
+    return document, csv_rows
+
+
+def write_station_observations_csv(path: Path, rows: list[dict[str, str]]) -> None:
+    fieldnames = [
+        "amedas_id",
+        "name",
+        "longitude",
+        "latitude",
+        "elevation_m",
+        "observed_at",
+        "temperature_c",
+        "temperature_quality",
+        "precipitation_1h_mm",
+        "precipitation_1h_quality",
+        "wind_speed_ms",
+        "wind_speed_quality",
+        "wind_direction_code",
+        "wind_direction_deg",
+        "wind_direction_quality",
+    ]
+    with path.open("w", encoding="utf-8-sig", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
 def nearest_amedas_id(station: dict, amedas_table: dict, candidates: set[str]) -> str | None:
     block_no = str(station.get("block_no", ""))
     if block_no in candidates:
@@ -411,6 +521,17 @@ def build(args: argparse.Namespace) -> None:
     latest = parse_latest_time(fetch_text(LATEST_TIME_URL))
     index = load_index(args.index)
     amedas_table = fetch_json(AMEDAS_TABLE_URL)
+    latest_payload = fetch_json(AMEDAS_MAP_URL.format(time_key=time_key(latest)))
+    latest_observations, latest_observation_rows = build_latest_station_observations(
+        latest, latest_payload, amedas_table
+    )
+    latest_json_name = "observed_realtime_station_observations.json"
+    latest_csv_name = "observed_realtime_station_observations.csv"
+    (args.out_dir / latest_json_name).write_text(
+        json.dumps(latest_observations, ensure_ascii=False, separators=(",", ":")),
+        encoding="utf-8",
+    )
+    write_station_observations_csv(args.out_dir / latest_csv_name, latest_observation_rows)
     latest, records = collect_station_extremes(latest, index, amedas_table, args.out_dir, args.max_steps)
     grid_points_2d = load_grid_points(args.out_dir)
     grid_points = [(lon, lat, 0.0) for lon, lat in grid_points_2d]
@@ -610,10 +731,20 @@ def build(args: argparse.Namespace) -> None:
             )
 
     manifest = {
-        "generator_version": 2,
+        "generator_version": 3,
         "generated_at": datetime.now(JST).isoformat(),
         "latest_time": latest.isoformat(),
         "source": "JMA AMeDAS latest_time.txt / data/map/{YYYYMMDDHHMM00}.json 10-minute observations",
+        "realtime_layers": {
+            "station_observations": {
+                "json": latest_json_name,
+                "csv": latest_csv_name,
+                "latest_time": latest_observations["latest_time"],
+                "station_count": latest_observations["station_count"],
+                "elements": latest_observations["elements"],
+                "quality_fields": "JMA raw numeric quality codes",
+            }
+        },
         "daily_distribution_source": "JMA MDRR all-station max/min tables, IDW interpolated to the display grid",
         "days": args.days,
         "slots": slots,

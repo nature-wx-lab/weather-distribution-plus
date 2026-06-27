@@ -1,0 +1,240 @@
+#!/usr/bin/env python3
+"""Mirror the latest JMA estimated-weather tiles for same-origin web use.
+
+JMA's 推計気象分布 is an hourly analysis.  Its raster tiles are 512 px and are
+published only at even zoom levels.  Keeping a small, explicit mirror avoids a
+cross-origin canvas when the web app exports a PNG.
+"""
+
+from __future__ import annotations
+
+import argparse
+import io
+import json
+import math
+import socket
+import shutil
+import tempfile
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime, timezone
+from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
+
+from PIL import Image
+
+
+ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_OUT = ROOT / "data" / "temperature_distribution_tool"
+SOURCE_ROOT = "https://www.jma.go.jp/bosai/jmatile/data/suikeikishou"
+TARGET_TIMES_URL = f"{SOURCE_ROOT}/targetTimes.json"
+USER_AGENT = "NatureWxLab-WeatherDistributionPlus/1.0"
+ELEMENTS = {"weather": "wthr", "sunshine": "suns1h"}
+# The official data extent. A tighter Japan extent would omit remote islands.
+DATA_BOUNDS = (118.0, 20.0, 150.0, 48.0)  # west, south, east, north
+
+
+def fetch(url: str, timeout: int = 30, attempts: int = 3) -> bytes:
+    """Fetch bytes, retrying transient transport errors and HTTP 5xx."""
+    request = Request(url, headers={"User-Agent": USER_AGENT, "Accept": "*/*"})
+    for attempt in range(attempts):
+        try:
+            with urlopen(request, timeout=timeout) as response:
+                return response.read()
+        except HTTPError as error:
+            if error.code < 500 or attempt + 1 >= attempts:
+                raise
+        except (TimeoutError, socket.timeout, URLError):
+            if attempt + 1 >= attempts:
+                raise
+        time.sleep(2**attempt)
+    raise RuntimeError(f"unreachable fetch retry state: {url}")
+
+
+def lon_to_x(lon: float, zoom: int) -> int:
+    return max(0, min((1 << zoom) - 1, int((lon + 180.0) / 360.0 * (1 << zoom))))
+
+
+def lat_to_y(lat: float, zoom: int) -> int:
+    lat = max(-85.05112878, min(85.05112878, lat))
+    value = (1.0 - math.asinh(math.tan(math.radians(lat))) / math.pi) / 2.0
+    return max(0, min((1 << zoom) - 1, int(value * (1 << zoom))))
+
+
+def tile_coordinates(zoom: int) -> list[tuple[int, int, int]]:
+    # JMA serves 512 px tiles. Their x/y indices therefore match 256 px XYZ at
+    # zoom-1 (e.g. Tokyo is z8/x113/y50, not x227/y100).
+    coordinate_zoom = zoom - 1
+    west, south, east, north = DATA_BOUNDS
+    return [
+        (zoom, x, y)
+        for x in range(lon_to_x(west, coordinate_zoom), lon_to_x(east, coordinate_zoom) + 1)
+        for y in range(lat_to_y(north, coordinate_zoom), lat_to_y(south, coordinate_zoom) + 1)
+    ]
+
+
+def has_visible_pixels(payload: bytes) -> bool:
+    """Reject JMA's small all-transparent placeholder PNGs."""
+    with Image.open(io.BytesIO(payload)) as image:
+        rgba = image.convert("RGBA")
+        alpha_min, alpha_max = rgba.getchannel("A").getextrema()
+        return alpha_max > 0
+
+
+def download_tile(task: tuple[str, str, str, str, int, int, int, Path]) -> tuple[bool, bool, str]:
+    public_key, source_key, basetime, validtime, zoom, x, y, stage = task
+    url = f"{SOURCE_ROOT}/{basetime}/none/{validtime}/surf/{source_key}/{zoom}/{x}/{y}.png"
+    destination = stage / public_key / str(zoom) / str(x) / f"{y}.png"
+    try:
+        payload = fetch(url)
+    except HTTPError as error:
+        if error.code == 404:  # Ocean/outside-analysis tiles can be absent.
+            return False, False, url
+        raise
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_bytes(payload)
+    return True, has_visible_pixels(payload), url
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT)
+    parser.add_argument(
+        "--zooms",
+        default="8",
+        help="native official zooms (default 8 preserves the ~1 km source resolution)",
+    )
+    parser.add_argument("--workers", type=int, default=4)
+    parser.add_argument("--keep-slots", type=int, default=2)
+    return parser.parse_args()
+
+
+def reusable_manifest(out_dir: Path, validtime: str, zooms: list[int]) -> dict | None:
+    """Return the current manifest only when its referenced tile slot is intact."""
+    path = out_dir / "suikei_realtime_manifest.json"
+    try:
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return None
+    if (
+        manifest.get("availability") is not True
+        or str(manifest.get("validtime") or "") != validtime
+        or sorted(manifest.get("available_zooms") or []) != zooms
+    ):
+        return None
+    layers = manifest.get("layers") or {}
+    for key in ELEMENTS:
+        layer = layers.get(key) or {}
+        expected = int(layer.get("tile_count") or 0)
+        visible = int(layer.get("visible_tile_count") or 0)
+        slot_dir = out_dir / "suikei_tiles" / validtime / key
+        if expected <= 0 or visible <= 0 or not slot_dir.is_dir():
+            return None
+        # Detect interrupted/manual deletion; extra files are harmless.
+        if sum(1 for _ in slot_dir.rglob("*.png")) < expected:
+            return None
+        template = str(layer.get("tile_template") or "")
+        if not template.startswith(f"suikei_tiles/{validtime}/{key}/"):
+            return None
+    return manifest
+
+
+def main() -> None:
+    args = parse_args()
+    zooms = sorted({int(value) for value in args.zooms.split(",") if value.strip()})
+    if not zooms or any(zoom < 4 or zoom > 10 or zoom % 2 for zoom in zooms):
+        raise SystemExit("--zooms must contain even official zooms from 4 through 10")
+
+    targets = json.loads(fetch(TARGET_TIMES_URL).decode("utf-8"))
+    eligible = [item for item in targets if all(key in item.get("elements", []) for key in ELEMENTS.values())]
+    if not eligible:
+        raise RuntimeError("JMA targetTimes has no slot containing wthr and suns1h")
+    selected = max(eligible, key=lambda item: str(item["validtime"]))
+    basetime, validtime = str(selected["basetime"]), str(selected["validtime"])
+    slot_id = validtime
+
+    existing = reusable_manifest(args.out_dir, validtime, zooms)
+    if existing is not None:
+        print(json.dumps(existing, ensure_ascii=False, indent=2))
+        return
+
+    args.out_dir.mkdir(parents=True, exist_ok=True)
+    tile_root = args.out_dir / "suikei_tiles"
+    tile_root.mkdir(exist_ok=True)
+    final_slot = tile_root / slot_id
+    with tempfile.TemporaryDirectory(prefix="suikei-", dir=args.out_dir) as temp:
+        stage = Path(temp) / slot_id
+        tasks = [
+            (public_key, source_key, basetime, validtime, zoom, x, y, stage)
+            for public_key, source_key in ELEMENTS.items()
+            for zoom in zooms
+            for _, x, y in tile_coordinates(zoom)
+        ]
+        counts = {key: 0 for key in ELEMENTS}
+        visible_counts = {key: 0 for key in ELEMENTS}
+        failures: list[str] = []
+        with ThreadPoolExecutor(max_workers=args.workers) as pool:
+            futures = {pool.submit(download_tile, task): task for task in tasks}
+            for future in as_completed(futures):
+                task = futures[future]
+                try:
+                    downloaded, visible, _url = future.result()
+                    if downloaded:
+                        counts[task[0]] += 1
+                    if visible:
+                        visible_counts[task[0]] += 1
+                except Exception as error:  # collect every failed URL before aborting
+                    _, source_key, task_base, task_valid, zoom, x, y, _ = task
+                    url = f"{SOURCE_ROOT}/{task_base}/none/{task_valid}/surf/{source_key}/{zoom}/{x}/{y}.png"
+                    failures.append(f"{url}: {type(error).__name__}: {error}")
+        if failures:
+            preview = "\n".join(failures[:20])
+            remainder = f"\n... and {len(failures) - 20} more" if len(failures) > 20 else ""
+            raise RuntimeError(f"JMA tile download failures ({len(failures)}):\n{preview}{remainder}")
+        if any(count == 0 for count in counts.values()):
+            raise RuntimeError(f"Incomplete JMA tile download: {counts}")
+        if any(count == 0 for count in visible_counts.values()):
+            raise RuntimeError(f"JMA returned no non-transparent tiles: {visible_counts}")
+        if final_slot.exists():
+            shutil.rmtree(final_slot)
+        stage.replace(final_slot)
+
+    manifest = {
+        "schema_version": 1,
+        "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "source": "JMA estimated weather distribution (推計気象分布)",
+        "source_target_times": TARGET_TIMES_URL,
+        "basetime": basetime,
+        "validtime": validtime,
+        "tile_size": 512,
+        "available_zooms": zooms,
+        "display_min_zoom": 4,
+        "display_max_zoom": 12,
+        "native_zoom": max(zooms),
+        "availability": True,
+        "resolution_note": "Official ~1 km analysis pixels; native z=8 tiles are scaled outside the native zoom.",
+        "bounds": {"west": DATA_BOUNDS[0], "south": DATA_BOUNDS[1], "east": DATA_BOUNDS[2], "north": DATA_BOUNDS[3]},
+        "layers": {
+            key: {
+                "source_element": source,
+                "tile_template": f"suikei_tiles/{slot_id}/{key}/{{z}}/{{x}}/{{y}}.png",
+                "tile_count": counts[key],
+                "visible_tile_count": visible_counts[key],
+            }
+            for key, source in ELEMENTS.items()
+        },
+    }
+    manifest_path = args.out_dir / "suikei_realtime_manifest.json"
+    temporary_manifest = manifest_path.with_suffix(".json.tmp")
+    temporary_manifest.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    temporary_manifest.replace(manifest_path)
+
+    slots = sorted((path for path in tile_root.iterdir() if path.is_dir()), reverse=True)
+    for stale in slots[max(1, args.keep_slots):]:
+        shutil.rmtree(stale)
+    print(json.dumps(manifest, ensure_ascii=False, indent=2))
+
+
+if __name__ == "__main__":
+    main()

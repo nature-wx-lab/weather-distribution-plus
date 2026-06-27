@@ -5,6 +5,7 @@ const PLACE_LABEL_URL = "./data/station_inventory_current_temperature.csv";
 const TEMPERATURE_EXTREMES_URL = `${DATA_ROOT}/temperature_extremes.json`;
 const FORECAST_MANIFEST_POLL_MS = 10 * 60 * 1000;
 const OBSERVED_DATA_POLL_MS = 10 * 60 * 1000;
+const SUIKEI_MANIFEST_URL = `${DATA_ROOT}/suikei_realtime_manifest.json`;
 const MAX_INTERPOLATION_ELEVATION_M = 1500;
 const MAJOR_PLACE_NAMES = new Set([
   "稚内", "旭川", "札幌", "釧路", "青森", "盛岡", "秋田", "仙台", "山形", "福島",
@@ -16,6 +17,7 @@ const MAJOR_PLACE_NAMES = new Set([
 ]);
 const state = {
   source: "forecast",
+  observedLayer: "temp",
   forecastLayer: "daily",
   element: "max",
   mode: "value",
@@ -31,6 +33,11 @@ const state = {
     { id: "today_max", element: "max", label: "今日最高", target_date: "" },
   ],
   observedManifestGeneratedAt: null,
+  observedRealtimeLayers: {},
+  realtimeStations: [],
+  realtimeStationMeta: null,
+  suikeiManifest: null,
+  suikeiTileCache: new Map(),
   forecastLayers: null,
   points: [],
   weatherFeatures: [],
@@ -88,7 +95,8 @@ const els = {
   timelineMaxLabel: document.getElementById("timelineMaxLabel"),
   timelineTicks: document.getElementById("timelineTicks"),
   timelineBottom: document.querySelector(".timeline-labels.bottom"),
-  currentObservedButton: document.getElementById("currentObservedButton"),
+  layerControlHeading: document.getElementById("layerControlHeading"),
+  observedLayerButtons: document.getElementById("observedLayerButtons"),
   dataNotice: document.getElementById("dataNotice"),
   modeSelect: document.getElementById("modeSelect"),
   modeButtons: document.getElementById("modeButtons"),
@@ -111,6 +119,8 @@ const els = {
   zoomInButton: document.getElementById("zoomInButton"),
   zoomOutButton: document.getElementById("zoomOutButton"),
   downloadButton: document.getElementById("downloadButton"),
+  copyLinkButton: document.getElementById("copyLinkButton"),
+  copyLinkStatus: document.getElementById("copyLinkStatus"),
   canvasWrap: document.querySelector(".canvas-wrap"),
   zoomThumb: document.querySelector(".zoom-thumb"),
   pointChartPanel: document.getElementById("pointChartPanel"),
@@ -194,7 +204,7 @@ function firstAvailableSlotIndex(slots) {
 }
 
 function currentDataType() {
-  if (state.source !== "forecast") return "temperature";
+  if (state.source !== "forecast") return { precip1h: "precipitation", wind: "wind", weather: "weather", sunshine: "sunshine" }[state.observedLayer] || "temperature";
   return state.forecastLayers?.[state.forecastLayer]?.data_type || "temperature";
 }
 
@@ -285,8 +295,39 @@ async function loadObservedManifest() {
   }
 }
 
+async function loadSuikeiManifest() {
+  try {
+    const response = await fetch(SUIKEI_MANIFEST_URL, { cache: "no-store" });
+    if (!response.ok) throw new Error(String(response.status));
+    state.suikeiManifest = await response.json();
+    ["weather", "sunshine"].forEach((name) => {
+      const layer = state.suikeiManifest?.layers?.[name];
+      if (layer && state.suikeiManifest?.availability !== false) {
+        layer.availability = true;
+        state.observedRealtimeLayers[name] = { available: true };
+      }
+    });
+  } catch {
+    state.suikeiManifest = null;
+  }
+}
+
 function applyObservedManifest(manifest) {
   state.observedManifestGeneratedAt = manifest.generated_at || state.observedManifestGeneratedAt;
+  const realtime = manifest.realtime_layers && typeof manifest.realtime_layers === "object" ? manifest.realtime_layers : {};
+  const station = realtime.station_observations || {};
+  const elements = station.elements || {};
+  state.observedRealtimeLayers = {
+    temp: realtime.temp || { available: true },
+    precip1h: realtime.precip1h || (elements.precipitation_1h ? { available: true } : null),
+    wind: realtime.wind || (elements.wind_speed || elements.wind_direction ? { available: true } : null),
+    weather: realtime.weather || null,
+    sunshine: realtime.sunshine || null,
+  };
+  state.realtimeStationMeta = station;
+  if (["precip1h", "wind"].includes(state.observedLayer) && !state.observedRealtimeLayers[state.observedLayer]?.available) {
+    state.observedLayer = "temp";
+  }
   if (Array.isArray(manifest.slots) && manifest.slots.length) {
     const previousSlot = currentObservedSlot();
     state.observedSlots = manifest.slots;
@@ -413,6 +454,41 @@ async function loadData() {
   els.dataNotice.textContent = "";
   state.weatherFeatures = [];
   updateControlAvailability();
+  if (state.source === "observed" && ["precip1h", "wind"].includes(state.observedLayer)) {
+    const file = state.realtimeStationMeta?.json;
+    try {
+      if (!file) throw new Error("missing realtime station file");
+      const response = await fetch(`${DATA_ROOT}/${file}`, { cache: "no-store" });
+      if (!response.ok) throw new Error(String(response.status));
+      const payload = await response.json();
+      state.realtimeStations = (payload.stations || []).filter((row) => {
+        if (!Number.isFinite(Number(row.longitude)) || !Number.isFinite(Number(row.latitude))) return false;
+        if (state.observedLayer === "precip1h") return Number.isFinite(Number(row.precipitation_1h_mm));
+        return Number.isFinite(Number(row.wind_speed_ms)) && Number.isFinite(Number(row.wind_direction_deg));
+      });
+      state.points = [];
+      els.statusText.textContent = `${state.realtimeStations.length.toLocaleString()}地点の公式観測値を表示中。観測時刻 ${state.realtimeStationMeta.latest_time || "--"}`;
+    } catch {
+      state.points = [];
+      state.realtimeStations = [];
+      els.statusText.textContent = "リアルタイム実況データを読み込めませんでした。";
+    }
+    updateHeadings();
+    draw();
+    return;
+  }
+  if (state.source === "observed" && ["weather", "sunshine"].includes(state.observedLayer)) {
+    state.points = [];
+    state.realtimeStations = [];
+    const layer = state.suikeiManifest?.layers?.[state.observedLayer];
+    els.statusText.textContent = layer?.availability
+      ? `気象庁「推計気象分布」を表示中。対象時刻 ${state.suikeiManifest.validtime || layer.validtime || "--"}`
+      : "推計気象分布のデータがありません。";
+    updateHeadings();
+    draw();
+    return;
+  }
+  state.realtimeStations = [];
   if (state.source === "forecast") {
     const slot = currentForecastSlot();
     state.element = slot.element;
@@ -796,6 +872,11 @@ function updateMapStamp(elementLabel, sourceLabel, dataType) {
   if (state.source === "forecast") {
     targetText = targetLabelForStamp(slot, dataType);
   } else {
+    const realtimeTarget = state.realtimeStationMeta?.latest_time || state.suikeiManifest?.validtime;
+    if (state.observedLayer !== "temp" && realtimeTarget) {
+      const realtimeParts = parseIsoLikeDateTime(realtimeTarget);
+      targetText = realtimeParts ? formatDateTimeJa(realtimeParts) : realtimeTarget;
+    } else {
     const sourceDate = state.points[0]?.sourceDate || state.observedDate;
     const observedParts = parseIsoLikeDateTime(sourceDate);
     if (state.element === "temp") {
@@ -804,6 +885,7 @@ function updateMapStamp(elementLabel, sourceLabel, dataType) {
     } else {
       const timeBand = state.element === "min" ? "明け方" : "日中";
       targetText = `${observedParts ? formatDateTimeJa(observedParts, { dateOnly: true, noYear: true }) : sourceDate || "--"} ${timeBand}`;
+    }
     }
   }
   const elementClass = stampElementClass(dataType);
@@ -1546,9 +1628,97 @@ function drawPoints() {
   });
 }
 
+function drawRealtimeStations() {
+  if (state.source !== "observed") return;
+  ctx.save();
+  state.realtimeStations.forEach((station) => {
+    const [x, y] = lonLatToPixel(Number(station.longitude), Number(station.latitude));
+    if (state.observedLayer === "precip1h") {
+      if (station.precipitation_1h_mm == null) return;
+      const value = Number(station.precipitation_1h_mm);
+      if (!Number.isFinite(value)) return;
+      ctx.beginPath();
+      ctx.arc(x, y, Math.max(3, Math.min(13, 3 + Math.sqrt(Math.max(0, value)) * 2)), 0, Math.PI * 2);
+      ctx.fillStyle = value >= 20 ? "#7f1d1d" : value >= 10 ? "#6f45c9" : value >= 5 ? "#3167d6" : value >= 1 ? "#4f9fe6" : "#8fd0f1";
+      ctx.fill(); ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5; ctx.stroke();
+    } else if (state.observedLayer === "wind") {
+      if (station.wind_speed_ms == null || station.wind_direction_deg == null) return;
+      const speed = Number(station.wind_speed_ms), direction = Number(station.wind_direction_deg);
+      if (!Number.isFinite(speed) || !Number.isFinite(direction)) return;
+      const angle = (direction - 90) * Math.PI / 180, length = Math.max(10, Math.min(27, 10 + speed * 1.5));
+      const x2 = x + Math.cos(angle) * length, y2 = y + Math.sin(angle) * length;
+      ctx.strokeStyle = "#174a68"; ctx.fillStyle = "#174a68"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x2, y2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - Math.cos(angle - .55) * 6, y2 - Math.sin(angle - .55) * 6); ctx.lineTo(x2 - Math.cos(angle + .55) * 6, y2 - Math.sin(angle + .55) * 6); ctx.closePath(); ctx.fill();
+    }
+  });
+  ctx.restore();
+}
+
+function tileLon(x, z) {
+  return x / (2 ** z) * 360 - 180;
+}
+
+function tileLat(y, z) {
+  const n = Math.PI - 2 * Math.PI * y / (2 ** z);
+  return 180 / Math.PI * Math.atan(Math.sinh(n));
+}
+
+function suikeiTileUrl(template, z, x, y) {
+  return `${DATA_ROOT}/${template.replace("{z}", z).replace("{x}", x).replace("{y}", y)}`;
+}
+
+function drawSuikeiTiles() {
+  if (state.source !== "observed" || !["weather", "sunshine"].includes(state.observedLayer)) return;
+  const layer = state.suikeiManifest?.layers?.[state.observedLayer];
+  if (!layer?.availability || !layer.tile_template) return;
+  const z = Number(layer.native_zoom ?? state.suikeiManifest.native_zoom ?? 8);
+  const coordinateZoom = z - 1; // JMA uses 512 px tiles, so x/y follow the preceding XYZ zoom.
+  const boundsValue = layer.bounds || state.suikeiManifest.bounds || [122, 20, 150, 48];
+  const bounds = Array.isArray(boundsValue)
+    ? boundsValue
+    : [boundsValue.west, boundsValue.south, boundsValue.east, boundsValue.north];
+  const n = 2 ** coordinateZoom;
+  const xMin = Math.max(0, Math.floor((Number(bounds[0]) + 180) / 360 * n));
+  const xMax = Math.min(n - 1, Math.floor((Number(bounds[2]) + 180) / 360 * n));
+  const latToY = (lat) => Math.floor((1 - Math.asinh(Math.tan(Number(lat) * Math.PI / 180)) / Math.PI) / 2 * n);
+  const yMin = Math.max(0, latToY(bounds[3]));
+  const yMax = Math.min(n - 1, latToY(bounds[1]));
+  let loaded = 0, loading = 0, missing = 0;
+  for (let x = xMin; x <= xMax; x += 1) for (let y = yMin; y <= yMax; y += 1) {
+    const url = suikeiTileUrl(layer.tile_template, z, x, y);
+    let entry = state.suikeiTileCache.get(url);
+    if (!entry) {
+      const image = new Image();
+      entry = { image, status: "loading" };
+      state.suikeiTileCache.set(url, entry);
+      image.onload = () => { entry.status = "loaded"; draw(); };
+      image.onerror = () => { entry.status = "missing"; draw(); };
+      image.src = url;
+    }
+    if (entry.status === "loading") loading += 1;
+    if (entry.status === "missing") missing += 1;
+    if (entry.status !== "loaded") continue;
+    loaded += 1;
+    const [x0, y0] = lonLatToPixel(tileLon(x, coordinateZoom), tileLat(y, coordinateZoom));
+    const [x1, y1] = lonLatToPixel(tileLon(x + 1, coordinateZoom), tileLat(y + 1, coordinateZoom));
+    ctx.drawImage(entry.image, Math.min(x0, x1), Math.min(y0, y1), Math.abs(x1 - x0) + 1, Math.abs(y1 - y0) + 1);
+  }
+  if (loading && !loaded) {
+    els.dataNotice.hidden = false;
+    els.dataNotice.textContent = "推計気象分布を読み込み中です。";
+  } else if (missing && !loaded) {
+    els.dataNotice.hidden = false;
+    els.dataNotice.textContent = "この時刻の推計気象分布タイルがありません。";
+  } else if (loaded) {
+    els.dataNotice.hidden = true;
+    els.dataNotice.textContent = "";
+  }
+}
+
 function updateHeadings() {
   const dataType = currentDataType();
-  const elementLabel = dataType === "weather" ? "天気" : dataType === "precipitation" ? "3時間降水量" : dataType === "snowfall" ? "3時間降雪量" : state.element === "temp" ? "現在気温" : state.element === "max" ? "最高気温" : "最低気温";
+  const elementLabel = state.source === "observed" && state.observedLayer === "precip1h" ? "1時間降水量" : state.source === "observed" && state.observedLayer === "wind" ? "風向・風速" : dataType === "weather" ? "天気" : dataType === "sunshine" ? "日照時間" : dataType === "precipitation" ? "3時間降水量" : dataType === "snowfall" ? "3時間降雪量" : state.element === "temp" ? "リアルタイム気温" : state.element === "max" ? "最高気温" : "最低気温";
   const modeLabel = state.mode === "anomaly" ? "平均との差" : "前日差";
   const sourceLabel = state.source === "forecast" ? "予測" : "実況";
   const slot = state.source === "forecast" ? currentForecastSlot() : null;
@@ -1621,11 +1791,7 @@ function syncTimelineFromElement() {
   els.timelineRange.max = String(max);
   els.timelineRange.value = String(value);
   els.timelineRange.disabled = false;
-  if (els.currentObservedButton) {
-    els.currentObservedButton.hidden = state.source !== "observed";
-    els.currentObservedButton.classList.toggle("active", currentObservedActive);
-  }
-  document.querySelector(".map-timeline")?.classList.toggle("has-current-button", state.source === "observed");
+  document.querySelector(".map-timeline")?.classList.remove("has-current-button");
   const percent = max === 0 ? 50 : (value / max) * 100;
   els.timelineRange.style.setProperty("--timeline-value", `${percent}%`);
   els.timelineTicks.innerHTML = labels.map((label, index) => {
@@ -1687,11 +1853,14 @@ function draw() {
   drawWorldBoundaries();
   drawGrid();
   drawPoints();
+  drawRealtimeStations();
+  drawSuikeiTiles();
   drawWeatherPolygons();
   drawBoundaries();
   drawPlaceLabels();
   drawRecordMarkers();
-  if (!state.points.length && !state.weatherFeatures.length) {
+  const hasSuikei = state.source === "observed" && ["weather", "sunshine"].includes(state.observedLayer) && state.suikeiManifest?.layers?.[state.observedLayer]?.availability;
+  if (!state.points.length && !state.weatherFeatures.length && !state.realtimeStations.length && !hasSuikei) {
     const slot = state.source === "forecast" ? currentForecastSlot() : null;
     const message = slot?.message || "表示できるデータがありません。";
     ctx.save();
@@ -2754,6 +2923,17 @@ function updateControlAvailability() {
     }
   }
   updateForecastLayerButtons();
+  if (els.layerControlHeading) els.layerControlHeading.textContent = forecast ? "予測レイヤ" : "実況レイヤ";
+  els.forecastLayerButtons.hidden = !forecast;
+  if (els.observedLayerButtons) {
+    els.observedLayerButtons.hidden = forecast;
+    els.observedLayerButtons.querySelectorAll("[data-observed-layer]").forEach((button) => {
+      const layer = button.dataset.observedLayer;
+      button.disabled = layer !== "temp" && !state.observedRealtimeLayers[layer]?.available;
+      button.classList.toggle("active", state.observedLayer === layer);
+      button.title = button.disabled ? "データ準備中" : "";
+    });
+  }
   updateModeButtons();
 }
 
@@ -2932,13 +3112,25 @@ document.querySelectorAll(".tabs button").forEach((button) => {
       state.element = currentForecastSlot().element;
       els.elementSelect.value = state.element;
     } else {
-      state.slotIndex = latestObservedSlotIndex("max");
-      state.element = currentObservedSlot()?.element || "max";
+      state.observedLayer = "temp";
+      state.element = "temp";
       els.elementSelect.value = state.element;
     }
     syncTimelineFromElement();
     loadData();
   });
+});
+
+els.observedLayerButtons?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-observed-layer]");
+  if (!button || button.disabled) return;
+  state.observedLayer = button.dataset.observedLayer;
+  state.element = state.observedLayer === "temp" ? "temp" : state.observedLayer;
+  state.mode = "value";
+  els.modeSelect.value = "value";
+  updateControlAvailability();
+  syncTimelineFromElement();
+  loadData();
 });
 
 els.elementSelect.addEventListener("change", () => {
@@ -2975,15 +3167,6 @@ els.timelineBottom.addEventListener("click", (event) => {
   const button = event.target.closest("[data-timeline-index]");
   if (!button) return;
   setElementFromTimeline(button.dataset.timelineIndex);
-});
-
-els.currentObservedButton.addEventListener("click", () => {
-  if (state.source !== "observed") return;
-  state.element = "temp";
-  els.elementSelect.value = "max";
-  updateControlAvailability();
-  syncTimelineFromElement();
-  loadData();
 });
 
 els.timelinePrevButton.addEventListener("click", () => {
@@ -3060,14 +3243,79 @@ els.downloadButton.addEventListener("click", () => {
   a.click();
 });
 
+function shareUrl() {
+  const url = new URL(window.location.href);
+  url.search = "";
+  url.hash = "";
+  url.searchParams.set("source", state.source);
+  if (state.source === "forecast") url.searchParams.set("layer", state.forecastLayer);
+  else url.searchParams.set("layer", state.observedLayer);
+  url.searchParams.set("slot", String(state.slotIndex));
+  url.searchParams.set("mode", state.mode);
+  url.searchParams.set("period", state.period);
+  url.searchParams.set("labels", state.showPlaceLabels ? "1" : "0");
+  return url.toString();
+}
+
+async function copyShareLink() {
+  const url = shareUrl();
+  try {
+    if (!navigator.clipboard?.writeText) throw new Error("Clipboard API unavailable");
+    await navigator.clipboard.writeText(url);
+    els.copyLinkStatus.textContent = "URLをコピーしました";
+    els.copyLinkButton.classList.add("copied");
+  } catch {
+    const textarea = document.createElement("textarea");
+    textarea.value = url;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.select();
+    const copied = document.execCommand("copy");
+    textarea.remove();
+    els.copyLinkStatus.textContent = copied ? "URLをコピーしました" : `コピーできませんでした: ${url}`;
+    els.copyLinkButton.classList.toggle("copied", copied);
+  }
+  window.setTimeout(() => {
+    els.copyLinkStatus.textContent = "";
+    els.copyLinkButton.classList.remove("copied");
+  }, 2500);
+}
+
+els.copyLinkButton?.addEventListener("click", copyShareLink);
+
+function applyUrlState() {
+  const params = new URLSearchParams(window.location.search);
+  const source = params.get("source");
+  if (source === "forecast" || source === "observed") state.source = source;
+  const layer = params.get("layer");
+  if (state.source === "forecast" && layer) state.forecastLayer = layer;
+  if (state.source === "observed" && layer) state.observedLayer = layer;
+  const slot = Number(params.get("slot"));
+  if (Number.isInteger(slot) && slot >= 0) state.slotIndex = slot;
+  const mode = params.get("mode");
+  if (["value", "anomaly", "previous"].includes(mode)) state.mode = mode;
+  const period = params.get("period");
+  if (["normal", "30", "20", "10", "5", "3"].includes(period)) state.period = period;
+  if (params.get("labels") === "0") state.showPlaceLabels = false;
+}
+
 window.addEventListener("resize", () => {
   resizeCanvasToDisplay();
   draw();
 });
 
 async function init() {
+  applyUrlState();
   await Promise.all([loadBoundaries(), loadPlaceLabels(), loadTemperatureExtremes()]);
   await Promise.all([loadForecastManifest(), loadObservedManifest()]);
+  await loadSuikeiManifest();
+  document.querySelectorAll(".tabs button").forEach((button) => button.classList.toggle("active", button.dataset.source === state.source));
+  els.forecastLayerSelect.value = state.forecastLayer;
+  els.modeSelect.value = state.mode;
+  els.periodSelect.value = state.period;
+  els.placeLabelsToggle.checked = state.showPlaceLabels;
   syncTimelineFromElement();
   await loadData();
   window.setInterval(checkForecastManifestUpdate, FORECAST_MANIFEST_POLL_MS);
