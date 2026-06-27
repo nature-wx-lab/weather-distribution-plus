@@ -16,7 +16,9 @@ permissions:
 
 concurrency:
   group: weather-distribution-data
-  cancel-in-progress: true
+  # An external 10-minute trigger can arrive while a refresh is still running.
+  # Queue the next refresh instead of canceling work that is nearly complete.
+  cancel-in-progress: false
 
 jobs:
   update:
