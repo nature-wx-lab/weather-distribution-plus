@@ -49,5 +49,9 @@ jobs:
             echo "No public data changes."
           else
             git commit -m "Update weather distribution data"
+            # A code or documentation push can land while this job is generating
+            # data. Rebase the generated-data commit onto the newest main before
+            # publishing so the refresh is not rejected as non-fast-forward.
+            git pull --rebase origin main
             git push
           fi
