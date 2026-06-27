@@ -5,11 +5,14 @@ from __future__ import annotations
 
 import argparse
 import csv
+import html
 import json
 import math
+import re
 import urllib.request
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from html.parser import HTMLParser
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -31,6 +34,8 @@ OUT_DIR = Path("outputs/weather/temperature_distribution_tool")
 LATEST_TIME_URL = "https://www.jma.go.jp/bosai/amedas/data/latest_time.txt"
 AMEDAS_TABLE_URL = "https://www.jma.go.jp/bosai/amedas/const/amedastable.json"
 AMEDAS_MAP_URL = "https://www.jma.go.jp/bosai/amedas/data/map/{time_key}.json"
+MDRR_ALLTABLE_URL = "https://www.data.jma.go.jp/stats/data/mdrr/tem_rct/alltable/{code}{mmdd}.html"
+STATION_INVENTORY = Path("data/weather/japan_all_stations/station_inventory_current_temperature.csv")
 
 
 @dataclass
@@ -41,6 +46,102 @@ class RealtimeStationValue:
     lon: float
     lat: float
     normal_c: float
+
+
+class DailyTableParser(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self.rows: list[list[str]] = []
+        self._row: list[str] | None = None
+        self._cell: str | None = None
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag == "tr":
+            self._row = []
+        elif tag in {"td", "th"} and self._row is not None:
+            self._cell = ""
+
+    def handle_data(self, data: str) -> None:
+        if self._cell is not None:
+            self._cell += data
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag in {"td", "th"} and self._cell is not None:
+            if self._row is not None:
+                self._row.append(clean_text(self._cell))
+            self._cell = None
+        elif tag == "tr" and self._row is not None:
+            if self._row:
+                self.rows.append(self._row)
+            self._row = None
+
+
+def clean_text(value: str) -> str:
+    return re.sub(r"\s+", " ", html.unescape(value).replace("\u3000", " ")).strip()
+
+
+def station_name(value: str) -> str:
+    return value.split("（", 1)[0].replace("*", "").replace("ヶ", "ケ").replace(" ", "").strip()
+
+
+def region_name(value: str) -> str:
+    return value.replace("北海道", "").replace(" ", "").replace("\u3000", "").strip()
+
+
+def number(value: str) -> float | None:
+    match = re.search(r"[+-]?\d+(?:\.\d+)?", value or "")
+    return float(match.group(0)) if match else None
+
+
+def load_station_inventory(path: Path) -> dict[tuple[str, str], list[dict[str, str]]]:
+    lookup: dict[tuple[str, str], list[dict[str, str]]] = {}
+    with path.open("r", encoding="utf-8-sig", newline="") as handle:
+        for row in csv.DictReader(handle):
+            if str(row.get("is_current", "")).lower() != "true":
+                continue
+            if str(row.get("has_temperature", "")).lower() != "true":
+                continue
+            key = (station_name(str(row.get("jma_name", ""))), region_name(str(row.get("prefecture", ""))))
+            lookup.setdefault(key, []).append(row)
+    return lookup
+
+
+def fetch_daily_station_values(
+    target_date,
+    element: str,
+    inventory: dict[tuple[str, str], list[dict[str, str]]],
+) -> dict[str, list[RealtimeStationValue]]:
+    code = "mxtemsad" if element == "max" else "mntemsad"
+    url = MDRR_ALLTABLE_URL.format(code=code, mmdd=target_date.strftime("%m%d"))
+    parser = DailyTableParser()
+    parser.feed(fetch_text(url))
+    fields = {"value": [], "anomaly": [], "previous": []}
+    for cells in parser.rows:
+        if len(cells) != 9:
+            continue
+        value = number(cells[3])
+        if value is None:
+            continue
+        key = (station_name(cells[2]), region_name(cells[0]))
+        matches = inventory.get(key, [])
+        if len(matches) != 1:
+            continue
+        station = matches[0]
+        common = {
+            "station_key": str(station["station_key"]),
+            "name": str(station["jma_name"]),
+            "region": str(station["prefecture"]),
+            "lon": float(station["longitude"]),
+            "lat": float(station["latitude"]),
+        }
+        fields["value"].append(RealtimeStationValue(**common, normal_c=value))
+        anomaly = number(cells[5])
+        previous = number(cells[6])
+        if anomaly is not None:
+            fields["anomaly"].append(RealtimeStationValue(**common, normal_c=anomaly))
+        if previous is not None:
+            fields["previous"].append(RealtimeStationValue(**common, normal_c=previous))
+    return fields
 
 
 def fetch_text(url: str) -> str:
@@ -253,27 +354,30 @@ def write_observed_grid_set(
     target_date,
     target_label: str,
     previous_grid: np.ndarray | None,
+    official_normal_average_grid: np.ndarray | None,
     periods: list[str],
     slot_id: str | None,
 ) -> None:
     for period in periods:
         suffix = period_suffix(period)
-        normals = load_station_normals(args.index, args.station_dir, target_date.strftime("%m-%d"), period, element)
-        average_grid = idw_normals_for_points(grid_points, normals)
-        for mode in ["value", "anomaly", "previous"]:
-            rows = build_rows(
-                grid_points_2d,
-                value_grid,
-                average_grid,
-                previous_grid,
-                target_date.isoformat(),
-                target_label,
-                mode,
-            )
-            if slot_id:
-                write_csv(args.out_dir / f"observed_{slot_id}_{mode}_{suffix}.csv", rows)
-            if not slot_id:
-                write_csv(args.out_dir / f"observed_{element}_{mode}_{suffix}.csv", rows)
+        if period == "normal" and official_normal_average_grid is not None:
+            average_grid = official_normal_average_grid
+        else:
+            normals = load_station_normals(args.index, args.station_dir, target_date.strftime("%m-%d"), period, element)
+            average_grid = idw_normals_for_points(grid_points, normals)
+        rows = build_rows(
+            grid_points_2d,
+            value_grid,
+            average_grid,
+            previous_grid,
+            target_date.isoformat(),
+            target_label,
+            "anomaly",
+        )
+        if slot_id:
+            write_csv(args.out_dir / f"observed_{slot_id}_anomaly_{suffix}.csv", rows)
+        if not slot_id:
+            write_csv(args.out_dir / f"observed_{element}_anomaly_{suffix}.csv", rows)
 
 
 def period_suffix(period: str) -> str:
@@ -282,14 +386,13 @@ def period_suffix(period: str) -> str:
 
 def observed_slot_files_exist(out_dir: Path, slot_id: str) -> bool:
     return all(
-        (out_dir / f"observed_{slot_id}_{mode}_{period_suffix(period)}.csv").exists()
+        (out_dir / f"observed_{slot_id}_anomaly_{period_suffix(period)}.csv").exists()
         for period in ["normal", "30", "20", "10", "5", "3"]
-        for mode in ["value", "anomaly", "previous"]
     )
 
 
 def load_saved_slot_observed_grid(out_dir: Path, slot_id: str, expected_count: int) -> np.ndarray | None:
-    path = out_dir / f"observed_{slot_id}_value_30y.csv"
+    path = out_dir / f"observed_{slot_id}_anomaly_30y.csv"
     if not path.exists():
         return None
     values: list[float] = []
@@ -312,6 +415,7 @@ def build(args: argparse.Namespace) -> None:
     grid_points_2d = load_grid_points(args.out_dir)
     grid_points = [(lon, lat, 0.0) for lon, lat in grid_points_2d]
     periods = ["normal", "30", "20", "10", "5", "3"]
+    station_inventory = load_station_inventory(args.station_inventory)
     source_date = latest.date().isoformat()
     latest_label = latest.isoformat()
 
@@ -361,20 +465,31 @@ def build(args: argparse.Namespace) -> None:
         encoding="utf-8",
     )
 
-    for element in ["temp"]:
-        for period in periods:
-            rows = build_rows(
-                grid_points_2d,
-                value_grids[element],
-                None,
-                None,
-                source_date,
-                latest_label,
-                "value",
-            )
-            write_csv(args.out_dir / f"observed_{element}_value_{period_suffix(period)}.csv", rows)
+    rows = build_rows(
+        grid_points_2d,
+        value_grids["temp"],
+        None,
+        None,
+        source_date,
+        latest_label,
+        "value",
+    )
+    write_csv(args.out_dir / "observed_temp_value_30y.csv", rows)
 
+    manifest_path = args.out_dir / "observed_realtime_manifest.json"
+    existing_manifest = {}
+    if manifest_path.exists():
+        try:
+            existing_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            existing_manifest = {}
+    existing_sources = {
+        str(slot.get("id")): str(slot.get("source"))
+        for slot in existing_manifest.get("slots") or []
+    }
+    can_reuse_corrected_daily = int(existing_manifest.get("generator_version") or 0) >= 2
     slots = []
+    official_station_count = 0
     latest_date = latest.date()
     observed_latest_text = index.get("current_year", {}).get("latest_date")
     observed_latest = datetime.strptime(observed_latest_text, "%Y-%m-%d").date() if observed_latest_text else None
@@ -396,8 +511,42 @@ def build(args: argparse.Namespace) -> None:
         for element in ["min", "max"]:
             slot_id = f"{target_date.strftime('%Y%m%d')}_{element}"
             target_label = latest_label if target_date == latest_date else target_date.isoformat()
+            if (
+                target_date < latest_date
+                and can_reuse_corrected_daily
+                and existing_sources.get(slot_id) == "daily"
+                and observed_slot_files_exist(args.out_dir, slot_id)
+            ):
+                slots.append({
+                    "id": slot_id,
+                    "label": short_slot_label(target_date, element),
+                    "element": element,
+                    "target_date": target_date.isoformat(),
+                    "target_time": target_date.isoformat(),
+                    "status": "available",
+                    "source": "daily",
+                })
+                continue
             skip_write = False
-            if target_date == latest_date:
+            official_normal_average_grid = None
+            try:
+                official = fetch_daily_station_values(target_date, element, station_inventory)
+            except Exception as exc:
+                print(f"warning: failed to fetch JMA MDRR all-station table for {slot_id}: {exc}")
+                official = {"value": [], "anomaly": [], "previous": []}
+            if official["value"]:
+                official_station_count = max(official_station_count, len(official["value"]))
+                grid = idw_values(grid_points, official["value"])
+                if official["anomaly"]:
+                    anomaly_grid = idw_values(grid_points, official["anomaly"])
+                    official_normal_average_grid = grid - anomaly_grid
+                if official["previous"]:
+                    previous_diff_grid = idw_values(grid_points, official["previous"])
+                    previous_grid = grid - previous_diff_grid
+                else:
+                    previous_grid = realtime_previous_grids.get(element) if target_date == latest_date else None
+                source = "realtime" if target_date == latest_date else "daily"
+            elif target_date == latest_date:
                 grid = value_grids[element]
                 previous_grid = realtime_previous_grids.get(element)
                 source = "realtime"
@@ -430,6 +579,7 @@ def build(args: argparse.Namespace) -> None:
                     target_date=target_date,
                     target_label=target_label,
                     previous_grid=previous_grid,
+                    official_normal_average_grid=official_normal_average_grid,
                     periods=periods,
                     slot_id=slot_id,
                 )
@@ -443,6 +593,7 @@ def build(args: argparse.Namespace) -> None:
                     target_date=target_date,
                     target_label=target_label,
                     previous_grid=previous_grid,
+                    official_normal_average_grid=official_normal_average_grid,
                     periods=periods,
                     slot_id=None,
                 )
@@ -459,15 +610,19 @@ def build(args: argparse.Namespace) -> None:
             )
 
     manifest = {
+        "generator_version": 2,
         "generated_at": datetime.now(JST).isoformat(),
         "latest_time": latest.isoformat(),
         "source": "JMA AMeDAS latest_time.txt / data/map/{YYYYMMDDHHMM00}.json 10-minute observations",
+        "daily_distribution_source": "JMA MDRR all-station max/min tables, IDW interpolated to the display grid",
         "days": args.days,
         "slots": slots,
-        "station_count": len(records),
+        "station_count": max(len(records), official_station_count),
+        "realtime_timeseries_station_count": len(records),
+        "daily_distribution_station_count": official_station_count,
         "grid_count": len(grid_points_2d),
     }
-    (args.out_dir / "observed_realtime_manifest.json").write_text(
+    manifest_path.write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
@@ -479,6 +634,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--index", type=Path, default=INDEX_PATH)
     parser.add_argument("--station-dir", type=Path, default=STATION_DIR)
     parser.add_argument("--out-dir", type=Path, default=OUT_DIR)
+    parser.add_argument("--station-inventory", type=Path, default=STATION_INVENTORY)
     parser.add_argument("--max-steps", type=int, default=0, help="Limit 10-minute files, for tests. 0 means from midnight.")
     parser.add_argument("--days", type=int, default=7, help="Observed min/max days to expose in the timeline and point chart, including today.")
     return parser.parse_args()

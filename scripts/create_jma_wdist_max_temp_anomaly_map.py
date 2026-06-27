@@ -50,7 +50,7 @@ FONT_CANDIDATES = (
 MAX_INTERPOLATION_ELEVATION_M = 1500.0
 JMA_NORMAL_SURFACE_ZIP = Path("data/weather/jma_normals_2020_v5/normal_surface.zip")
 JMA_DAILY_NORMAL_CODES = {
-    "min": "0510",
+    "min": "0700",
     "max": "0600",
 }
 

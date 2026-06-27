@@ -96,7 +96,7 @@ def numeric_text(value: str) -> str:
 
 
 def station_display_name(value: str) -> str:
-    return re.sub(r"（.*?）", "", value).replace("*", "").strip()
+    return value.split("（", 1)[0].replace("*", "").strip()
 
 
 def normalize_station(value: str) -> str:
@@ -162,6 +162,8 @@ def parse_rank_table(table: dict[str, object], key: str, lookup: dict[str, dict[
         rank = cells[0]
         if not rank or "観測値" in rank:
             continue
+        waiting_for_differences = any("お待ちください" in cell for cell in cells)
+        has_difference_columns = len(cells) >= 14 and not waiting_for_differences
         row = {
             "kind": key,
             "rank": rank,
@@ -171,8 +173,8 @@ def parse_rank_table(table: dict[str, object], key: str, lookup: dict[str, dict[
             "station_label": cells[3],
             "value": numeric_text(cells[4]),
             "time": cells[5],
-            "normal_diff": numeric_text(cells[6]) if len(cells) > 6 else "",
-            "previous_diff": numeric_text(cells[7]) if len(cells) > 7 else "",
+            "normal_diff": numeric_text(cells[6]) if has_difference_columns else "",
+            "previous_diff": numeric_text(cells[7]) if has_difference_columns else "",
         }
         attach_station(row, lookup)
         parsed.append(row)

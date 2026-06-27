@@ -163,9 +163,9 @@ def write_forecast_points(slot: dict[str, object], forecast_points: list[tuple[f
         previous_station_values = load_station_values(args.index, args.station_dir, str(slot["element"]), previous_date)
         previous_grid = idw_values(forecast_points, previous_station_values)
     else:
-        previous_path = args.out_dir / f"observed_{previous_date.strftime('%Y%m%d')}_{slot['element']}_value_30y.csv"
+        previous_path = args.out_dir / f"observed_{previous_date.strftime('%Y%m%d')}_{slot['element']}_anomaly_30y.csv"
         if not previous_path.exists():
-            previous_path = args.out_dir / f"observed_{slot['element']}_value_30y.csv"
+            previous_path = args.out_dir / f"observed_{slot['element']}_anomaly_30y.csv"
         previous_values = []
         with previous_path.open("r", encoding="utf-8-sig", newline="") as handle:
             for row in csv.DictReader(handle):
@@ -181,9 +181,7 @@ def write_forecast_points(slot: dict[str, object], forecast_points: list[tuple[f
             str(slot["element"]),
         )
         average_grid = idw_normals_for_points(forecast_points, normals)
-        value_rows = []
         anomaly_rows = []
-        previous_rows = []
         for (lon, lat, forecast), average, previous in zip(forecast_points, average_grid, previous_grid):
             average_f = float(average)
             previous_f = float(previous)
@@ -201,16 +199,8 @@ def write_forecast_points(slot: dict[str, object], forecast_points: list[tuple[f
                 "source_date": "",
                 "target_date": target_date.isoformat(),
             }
-            value_rows.append({**common, "display_c": f"{forecast:.2f}"})
             anomaly_rows.append({**common, "display_c": f"{anomaly:+.2f}"})
-            previous_rows.append({**common, "display_c": f"{previous_diff:+.2f}"})
-
-        for mode, rows in [
-            ("value", value_rows),
-            ("anomaly", anomaly_rows),
-            ("previous", previous_rows),
-        ]:
-            write_csv(args.out_dir / f"forecast_{slot['id']}_{mode}_{period_suffix(period)}.csv", rows)
+        write_csv(args.out_dir / f"forecast_{slot['id']}_anomaly_{period_suffix(period)}.csv", anomaly_rows)
 
 
 def write_forecast_slot(slot: dict[str, object], target: dict[str, str], args: argparse.Namespace) -> None:

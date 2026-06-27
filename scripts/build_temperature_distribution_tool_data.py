@@ -69,10 +69,10 @@ def find_grid_csv(out_dir: Path, element: str) -> Path:
             continue
         if slot.get("status") not in {"available", "stale"}:
             continue
-        path = out_dir / f"forecast_{slot.get('id')}_value_30y.csv"
+        path = out_dir / f"forecast_{slot.get('id')}_anomaly_30y.csv"
         if path.exists():
             return path
-    for path in sorted(out_dir.glob("forecast_*_value_30y.csv")):
+    for path in sorted(out_dir.glob("forecast_*_anomaly_30y.csv")):
         return path
     raise FileNotFoundError(f"no saved forecast grid CSV found in {out_dir}")
 

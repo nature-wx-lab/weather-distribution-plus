@@ -66,6 +66,15 @@ const state = {
   dragMoved: false,
 };
 
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"]/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+  }[character]));
+}
+
 const els = {
   canvas: document.getElementById("mapCanvas"),
   tooltip: document.getElementById("tooltip"),
@@ -141,14 +150,14 @@ function csvPath() {
   if (state.source === "forecast") {
     const slot = currentForecastSlot();
     if (state.forecastLayer === "temp3h") return `${DATA_ROOT}/forecast_${slot.id}_value.csv`;
-    return `${DATA_ROOT}/forecast_${slot.id}_${state.mode}_${suffix}.csv`;
+    return `${DATA_ROOT}/forecast_${slot.id}_anomaly_${suffix}.csv`;
   }
   if (state.element !== "temp") {
     const slot = currentObservedSlot();
-    if (slot?.id) return `${DATA_ROOT}/observed_${slot.id}_${state.mode}_${suffix}.csv`;
+    if (slot?.id) return `${DATA_ROOT}/observed_${slot.id}_anomaly_${suffix}.csv`;
   }
-  const mode = state.element === "temp" ? "value" : state.mode;
-  return `${DATA_ROOT}/${state.source}_${state.element}_${mode}_${suffix}.csv`;
+  if (state.element === "temp") return `${DATA_ROOT}/observed_temp_value_30y.csv`;
+  return `${DATA_ROOT}/${state.source}_${state.element}_anomaly_${suffix}.csv`;
 }
 
 function periodSuffix(period) {
@@ -313,6 +322,15 @@ function parseCsv(text) {
   }).filter((p) => Number.isFinite(p.lon) && Number.isFinite(p.lat));
 }
 
+function applyDisplayMode(points) {
+  points.forEach((point) => {
+    if (state.mode === "anomaly") point.display = point.anomaly;
+    else if (state.mode === "previous") point.display = point.previousDiff;
+    else point.display = point.forecast ?? point.observed;
+  });
+  return points.filter((point) => Number.isFinite(point.display));
+}
+
 function parseTable(text) {
   const lines = text.trim().split(/\r?\n/);
   const header = lines.shift().replace(/^\uFEFF/, "").split(",");
@@ -441,7 +459,7 @@ async function loadData() {
     state.observedDataSignature = state.source === "observed"
       ? response.headers.get("last-modified") || response.headers.get("etag") || state.observedDataSignature
       : state.observedDataSignature;
-    state.points = parseCsv(await response.text());
+    state.points = applyDisplayMode(parseCsv(await response.text()));
     const first = state.points[0];
     if (state.source === "observed") {
       state.observedDate = first?.sourceDate || state.observedDate;
@@ -1136,7 +1154,7 @@ function renderRankingList(day, kind) {
   const rows = (day?.rankings?.[kind] || []).slice(0, 10);
   if (!rows.length) return `<section class="ranking-list ${meta.group} ${meta.direction}"><h4><span>${rankingTitle(kind)}</span><b>${meta.badge}</b></h4><p class="ranking-empty">データなし</p></section>`;
   return `<section class="ranking-list ${meta.group} ${meta.direction}"><h4><span>${rankingTitle(kind)}</span><b>${meta.badge}</b></h4><ol>${rows.map((row) => (
-    `<li><span class="rank-order">${row.rank}</span><span class="rank-place">${row.prefecture} ${row.station}</span><span class="rank-value">${row.value}℃</span></li>`
+    `<li><span class="rank-order">${escapeHtml(row.rank)}</span><span class="rank-place">${escapeHtml(`${row.prefecture || ""} ${row.station || ""}`.trim())}</span><span class="rank-value">${escapeHtml(row.value)}℃</span></li>`
   )).join("")}</ol></section>`;
 }
 
@@ -1244,7 +1262,7 @@ function updateRankingPanel() {
     <div class="ranking-head">
       <div>
         <div class="ranking-title-row">
-          <strong>${day.label || day.date} 気温ランキング</strong>
+          <strong>${escapeHtml(day.label || day.date)} 気温ランキング</strong>
           <span class="ranking-status ${status.className}"><b>${status.label}</b><span>${status.text}</span></span>
         </div>
         <span>${state.source === "forecast" ? "表示中の予測格子から作成した上位10地点 / 下位10地点" : "最高気温と最低気温の全国上位10地点 / 下位10地点"}</span>
@@ -1786,7 +1804,7 @@ function shortChartDate(value) {
 }
 
 function slotPath(prefix, slot, mode = "value") {
-  return `${DATA_ROOT}/${prefix}_${slot.id}_${mode}_${periodSuffix(state.period)}.csv`;
+  return `${DATA_ROOT}/${prefix}_${slot.id}_anomaly_${periodSuffix(state.period)}.csv`;
 }
 
 async function loadCsvPoint(path, index) {

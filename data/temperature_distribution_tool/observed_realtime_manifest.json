@@ -1,7 +1,9 @@
 {
-  "generated_at": "2026-06-27T06:57:36.238258+09:00",
-  "latest_time": "2026-06-27T06:40:00+09:00",
+  "generator_version": 2,
+  "generated_at": "2026-06-27T10:40:24.326244+09:00",
+  "latest_time": "2026-06-27T10:30:00+09:00",
   "source": "JMA AMeDAS latest_time.txt / data/map/{YYYYMMDDHHMM00}.json 10-minute observations",
+  "daily_distribution_source": "JMA MDRR all-station max/min tables, IDW interpolated to the display grid",
   "days": 7,
   "slots": [
     {
@@ -117,7 +119,7 @@
       "label": "27日最低",
       "element": "min",
       "target_date": "2026-06-27",
-      "target_time": "2026-06-27T06:40:00+09:00",
+      "target_time": "2026-06-27T10:30:00+09:00",
       "status": "available",
       "source": "realtime"
     },
@@ -126,11 +128,13 @@
       "label": "27日最高",
       "element": "max",
       "target_date": "2026-06-27",
-      "target_time": "2026-06-27T06:40:00+09:00",
+      "target_time": "2026-06-27T10:30:00+09:00",
       "status": "available",
       "source": "realtime"
     }
   ],
-  "station_count": 154,
+  "station_count": 914,
+  "realtime_timeseries_station_count": 154,
+  "daily_distribution_station_count": 914,
   "grid_count": 31296
 }
