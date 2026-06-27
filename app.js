@@ -1505,10 +1505,34 @@ function legendConfig() {
       items: ["Clear", "Cloudy", "Rain", "Rain/snow", "Snow"].map((level) => ({ level, ...weatherStyle(level) })),
     };
   }
+  if (dataType === "sunshine") {
+    return {
+      type: "weather",
+      title: "日照時間",
+      items: [
+        { label: "1.0 h", color: "#f15b4a" },
+        { label: "0.8 h", color: "#ffc85a" },
+        { label: "0.6 h", color: "#fff3b0" },
+        { label: "0.4 h", color: "#c7c7c7" },
+        { label: "0.2 h", color: "#9d9d9d" },
+        { label: "0.0 h", color: "#737373" },
+      ],
+    };
+  }
+  if (dataType === "wind") {
+    return {
+      type: "weather",
+      title: "風向・風速",
+      items: [
+        { label: "矢印: 風向", color: "#174a68" },
+        { label: "長さ: 風速", color: "#174a68" },
+      ],
+    };
+  }
   if (dataType === "precipitation") {
     return {
       type: "weather",
-      title: "3時間降水量",
+      title: state.source === "observed" ? "1時間降水量" : "3時間降水量",
       items: ["0<=mm", "1<=mm", "5<=mm", "10<=mm", "20<=mm", "30<=mm", "50<=mm"].map((level) => ({ level, ...precipitationStyle(level) })),
     };
   }
