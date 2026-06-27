@@ -1,29 +1,11 @@
 {
   "generator_version": 2,
-  "generated_at": "2026-06-28T00:03:42.450169+09:00",
-  "latest_time": "2026-06-27T23:50:00+09:00",
+  "generated_at": "2026-06-28T00:13:07.275809+09:00",
+  "latest_time": "2026-06-28T00:00:00+09:00",
   "source": "JMA AMeDAS latest_time.txt / data/map/{YYYYMMDDHHMM00}.json 10-minute observations",
   "daily_distribution_source": "JMA MDRR all-station max/min tables, IDW interpolated to the display grid",
   "days": 7,
   "slots": [
-    {
-      "id": "20260621_min",
-      "label": "21日最低",
-      "element": "min",
-      "target_date": "2026-06-21",
-      "target_time": "2026-06-21",
-      "status": "available",
-      "source": "daily"
-    },
-    {
-      "id": "20260621_max",
-      "label": "21日最高",
-      "element": "max",
-      "target_date": "2026-06-21",
-      "target_time": "2026-06-21",
-      "status": "available",
-      "source": "daily"
-    },
     {
       "id": "20260622_min",
       "label": "22日最低",
@@ -119,16 +101,34 @@
       "label": "27日最低",
       "element": "min",
       "target_date": "2026-06-27",
-      "target_time": "2026-06-27T23:50:00+09:00",
+      "target_time": "2026-06-27",
       "status": "available",
-      "source": "realtime"
+      "source": "daily"
     },
     {
       "id": "20260627_max",
       "label": "27日最高",
       "element": "max",
       "target_date": "2026-06-27",
-      "target_time": "2026-06-27T23:50:00+09:00",
+      "target_time": "2026-06-27",
+      "status": "available",
+      "source": "daily"
+    },
+    {
+      "id": "20260628_min",
+      "label": "28日最低",
+      "element": "min",
+      "target_date": "2026-06-28",
+      "target_time": "2026-06-28T00:00:00+09:00",
+      "status": "available",
+      "source": "realtime"
+    },
+    {
+      "id": "20260628_max",
+      "label": "28日最高",
+      "element": "max",
+      "target_date": "2026-06-28",
+      "target_time": "2026-06-28T00:00:00+09:00",
       "status": "available",
       "source": "realtime"
     }
