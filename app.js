@@ -463,8 +463,11 @@ async function loadData() {
       const payload = await response.json();
       state.realtimeStations = (payload.stations || []).filter((row) => {
         if (!Number.isFinite(Number(row.longitude)) || !Number.isFinite(Number(row.latitude))) return false;
-        if (state.observedLayer === "precip1h") return Number.isFinite(Number(row.precipitation_1h_mm));
-        return Number.isFinite(Number(row.wind_speed_ms)) && Number.isFinite(Number(row.wind_direction_deg));
+        if (state.observedLayer === "precip1h") {
+          return row.precipitation_1h_mm != null && Number.isFinite(Number(row.precipitation_1h_mm));
+        }
+        return row.wind_speed_ms != null && row.wind_direction_deg != null
+          && Number.isFinite(Number(row.wind_speed_ms)) && Number.isFinite(Number(row.wind_direction_deg));
       });
       state.points = [];
       els.statusText.textContent = `${state.realtimeStations.length.toLocaleString()}地点の公式観測値を表示中。観測時刻 ${state.realtimeStationMeta.latest_time || "--"}`;
