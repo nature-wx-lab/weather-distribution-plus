@@ -1,41 +1,45 @@
 {
-  "generated_at": "2026-06-29T05:50:47+09:00",
+  "generated_at": "2026-06-29T06:00:55+09:00",
   "source": "JMA天気分布予報 targetTimes.json / *_temp_point / wm / r3 / s3 GeoJSON / VPFD地域時系列予報",
-  "service_date": "2026-06-28",
+  "service_date": "2026-06-29",
   "daily_rollover_hour_jst": 6,
   "today_max_cutoff_hour_jst": 14,
   "slots": [
     {
       "id": "today_min",
-      "label": "28日最低",
+      "label": "29日最低",
       "element": "min",
-      "target_date": "2026-06-28",
+      "target_date": "2026-06-29",
       "status": "unavailable",
       "message": "予測対象時刻を過ぎているため、実況の最低気温を参照ください。"
     },
     {
       "id": "today_max",
-      "label": "28日最高",
-      "element": "max",
-      "target_date": "2026-06-28",
-      "status": "unavailable",
-      "message": "予測対象時刻を過ぎているため、実況の最高気温を参照ください。"
-    },
-    {
-      "id": "tomorrow_min",
-      "label": "29日最低",
-      "element": "min",
-      "target_date": "2026-06-29",
-      "status": "unavailable",
-      "message": "JMA天気分布予報に該当する予測値がありません。"
-    },
-    {
-      "id": "tomorrow_max",
       "label": "29日最高",
       "element": "max",
       "target_date": "2026-06-29",
       "basetime": "20260628200000",
       "validtime": "20260629090000",
+      "status": "available",
+      "message": ""
+    },
+    {
+      "id": "tomorrow_min",
+      "label": "30日最低",
+      "element": "min",
+      "target_date": "2026-06-30",
+      "basetime": "20260628200000",
+      "validtime": "20260630000000",
+      "status": "available",
+      "message": ""
+    },
+    {
+      "id": "tomorrow_max",
+      "label": "30日最高",
+      "element": "max",
+      "target_date": "2026-06-30",
+      "basetime": "20260628200000",
+      "validtime": "20260630090000",
       "status": "available",
       "message": ""
     }
@@ -51,35 +55,39 @@
       "slots": [
         {
           "id": "today_min",
-          "label": "28日最低",
+          "label": "29日最低",
           "element": "min",
-          "target_date": "2026-06-28",
+          "target_date": "2026-06-29",
           "status": "unavailable",
           "message": "予測対象時刻を過ぎているため、実況の最低気温を参照ください。"
         },
         {
           "id": "today_max",
-          "label": "28日最高",
-          "element": "max",
-          "target_date": "2026-06-28",
-          "status": "unavailable",
-          "message": "予測対象時刻を過ぎているため、実況の最高気温を参照ください。"
-        },
-        {
-          "id": "tomorrow_min",
-          "label": "29日最低",
-          "element": "min",
-          "target_date": "2026-06-29",
-          "status": "unavailable",
-          "message": "JMA天気分布予報に該当する予測値がありません。"
-        },
-        {
-          "id": "tomorrow_max",
           "label": "29日最高",
           "element": "max",
           "target_date": "2026-06-29",
           "basetime": "20260628200000",
           "validtime": "20260629090000",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "tomorrow_min",
+          "label": "30日最低",
+          "element": "min",
+          "target_date": "2026-06-30",
+          "basetime": "20260628200000",
+          "validtime": "20260630000000",
+          "status": "available",
+          "message": ""
+        },
+        {
+          "id": "tomorrow_max",
+          "label": "30日最高",
+          "element": "max",
+          "target_date": "2026-06-30",
+          "basetime": "20260628200000",
+          "validtime": "20260630090000",
           "status": "available",
           "message": ""
         }
@@ -96,8 +104,8 @@
           "target_date": "2026-06-29",
           "basetime": "20260628200000",
           "validtime": "20260628210000",
-          "status": "available",
-          "message": ""
+          "status": "stale",
+          "message": "予測対象時刻を過ぎています。必要に応じて実況も確認してください。"
         },
         {
           "id": "temp3h_20260629000000",
