@@ -313,6 +313,10 @@ select {
   background: #eef3f7;
 }
 
+.layer-buttons button[hidden] {
+  display: none;
+}
+
 .layer-buttons button {
   display: grid;
   align-content: center;
@@ -442,7 +446,7 @@ select {
 
 .observed-layer-buttons {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 6px;
 }
 
@@ -452,8 +456,12 @@ select {
 }
 
 .observed-layer-buttons button {
-  min-height: 54px;
-  padding: 6px 3px;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 3px;
+  min-height: 82px;
+  padding: 5px 3px;
   border-color: #b9dccb;
   background: #eef8f3;
   color: #236247;
@@ -462,8 +470,78 @@ select {
   line-height: 1.2;
 }
 
+.observed-layer-buttons button[hidden] {
+  display: none;
+}
+
+.observed-layer-icon {
+  display: grid;
+  place-items: center;
+  width: 43px;
+  height: 43px;
+  border: 2px solid #2d5f4a;
+  border-radius: 50%;
+  background: #24533f;
+  color: #d9eee5;
+  box-shadow: 0 1px 3px rgba(20, 55, 40, 0.24);
+}
+
+.observed-layer-icon svg {
+  width: 34px;
+  height: 34px;
+  overflow: visible;
+}
+
+.observed-layer-icon .icon-stroke,
+.observed-layer-icon .wind-stroke,
+.observed-layer-icon .rain-stroke,
+.observed-layer-icon .sun-stroke {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.observed-layer-icon .icon-stroke.small {
+  stroke-width: 4;
+}
+
+.observed-layer-icon .icon-fill {
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 3;
+}
+
+.observed-layer-icon .cloud-fill {
+  fill: #d9e5ec;
+  stroke: #d9e5ec;
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+
+.observed-layer-icon .rain-drop {
+  fill: #58a9e2;
+}
+
+.observed-layer-icon .sun-fill {
+  fill: #f6c34f;
+  stroke: #f6c34f;
+  stroke-width: 3;
+}
+
+.observed-layer-label {
+  text-align: center;
+}
+
 .observed-layer-buttons button.active {
   box-shadow: inset 4px 0 0 #4da477, 0 0 0 2px rgba(77, 164, 119, 0.18);
+}
+
+.observed-layer-buttons button.active .observed-layer-icon {
+  border-color: #4da477;
+  background: #fff;
+  color: #236247;
 }
 
 .observed-layer-buttons button:disabled {
@@ -590,6 +668,10 @@ select {
   justify-self: center;
   height: 50px;
   padding: 0 0 4px;
+}
+
+.map-timeline[hidden] {
+  display: none;
 }
 
 .timeline-labels {

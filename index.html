@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>天気分布予報プラス ローカル試作</title>
-  <link rel="stylesheet" href="./styles.css?v=20260627-realtime-layers1" />
+  <link rel="stylesheet" href="./styles.css?v=20260628-observed-ui2" />
   </head>
   <body>
     <header class="topbar">
@@ -112,11 +112,30 @@
             </button>
           </div>
           <div id="observedLayerButtons" class="observed-layer-buttons" aria-label="実況レイヤ" hidden>
-            <button type="button" data-observed-layer="temp">リアルタイム<br />気温</button>
-            <button type="button" data-observed-layer="precip1h">1時間<br />降水量</button>
-            <button type="button" data-observed-layer="wind">風向・風速</button>
-            <button type="button" data-observed-layer="weather">天気</button>
-            <button type="button" data-observed-layer="sunshine">日照時間</button>
+            <button type="button" data-observed-layer="daily" title="最高・最低気温">
+              <span class="observed-layer-icon" aria-hidden="true"><svg viewBox="0 0 64 64"><path class="icon-stroke" d="M32 8a8 8 0 0 0-8 8v22.2a14 14 0 1 0 16 0V16a8 8 0 0 0-8-8Z"></path><path class="icon-fill" d="M32 26v22"></path><circle class="icon-fill" cx="32" cy="48" r="8"></circle><path class="icon-fill" d="M13 16l-6 7h4v11h4V23h4l-6-7ZM51 48l6-7h-4V30h-4v11h-4l6 7Z"></path></svg></span>
+              <span class="observed-layer-label">最高/最低<br />気温</span>
+            </button>
+            <button type="button" data-observed-layer="temp" title="実況気温">
+              <span class="observed-layer-icon" aria-hidden="true"><svg viewBox="0 0 64 64"><path class="icon-stroke" d="M28 8a9 9 0 0 0-9 9v23.5a16 16 0 1 0 18 0V17a9 9 0 0 0-9-9Z"></path><path class="icon-fill" d="M28 24v24"></path><circle class="icon-fill" cx="28" cy="48" r="8"></circle><path class="icon-stroke small" d="M43 18h10M43 28h10M43 38h10"></path></svg></span>
+              <span class="observed-layer-label">実況<br />気温</span>
+            </button>
+            <button type="button" data-observed-layer="precip1h" title="1時間降水量" hidden>
+              <span class="observed-layer-icon" aria-hidden="true"><svg viewBox="0 0 64 64"><path class="cloud-fill" d="M18 39h31a11 11 0 0 0 0-22 15 15 0 0 0-28-5A13.5 13.5 0 0 0 18 39Z"></path><path class="rain-drop" d="M18 45c-5 8-5 12 0 12s5-4 0-12ZM32 45c-5 8-5 12 0 12s5-4 0-12ZM46 45c-5 8-5 12 0 12s5-4 0-12Z"></path></svg></span>
+              <span class="observed-layer-label">1時間<br />降水量</span>
+            </button>
+            <button type="button" data-observed-layer="wind" title="風向・風速" hidden>
+              <span class="observed-layer-icon" aria-hidden="true"><svg viewBox="0 0 64 64"><path class="wind-stroke" d="M7 20h31c10 0 10-13 1-13-5 0-7 3-7 6M7 32h43c10 0 10 14 0 14-5 0-7-3-7-6M7 44h24"></path></svg></span>
+              <span class="observed-layer-label">風向・風速</span>
+            </button>
+            <button type="button" data-observed-layer="weather" title="推定天気">
+              <span class="observed-layer-icon" aria-hidden="true"><svg viewBox="0 0 64 64"><circle class="sun-fill" cx="43" cy="22" r="12"></circle><path class="cloud-fill" d="M17 43h29a11 11 0 0 0 0-22 15 15 0 0 0-28-5A13.5 13.5 0 0 0 17 43Z"></path><path class="rain-stroke" d="M18 49l-3 7M29 49l-3 7M40 49l-3 7"></path></svg></span>
+              <span class="observed-layer-label">推定天気</span>
+            </button>
+            <button type="button" data-observed-layer="sunshine" title="日照時間">
+              <span class="observed-layer-icon" aria-hidden="true"><svg viewBox="0 0 64 64"><circle class="sun-fill" cx="32" cy="32" r="13"></circle><path class="sun-stroke" d="M32 5v10M32 49v10M5 32h10M49 32h10M13 13l7 7M44 44l7 7M51 13l-7 7M20 44l-7 7"></path></svg></span>
+              <span class="observed-layer-label">日照時間</span>
+            </button>
           </div>
         </div>
 
@@ -265,6 +284,6 @@
       出典: 気象庁「天気分布予報」GeoJSON、気象庁日別値、気象庁アメダス10分値から作成した地点統計。平均値は地点統計をIDW補間した暫定値。地図境界データ: dataofjapan/land、Natural Earth系 countries GeoJSON。
     </footer>
 
-  <script src="./app.js?v=20260628-realtime-legends1" defer></script>
+  <script src="./app.js?v=20260628-observed-ui2" defer></script>
   </body>
 </html>

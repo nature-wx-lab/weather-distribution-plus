@@ -17,7 +17,7 @@ const MAJOR_PLACE_NAMES = new Set([
 ]);
 const state = {
   source: "forecast",
-  observedLayer: "temp",
+  observedLayer: "daily",
   forecastLayer: "daily",
   element: "max",
   mode: "value",
@@ -206,6 +206,10 @@ function firstAvailableSlotIndex(slots) {
 function currentDataType() {
   if (state.source !== "forecast") return { precip1h: "precipitation", wind: "wind", weather: "weather", sunshine: "sunshine" }[state.observedLayer] || "temperature";
   return state.forecastLayers?.[state.forecastLayer]?.data_type || "temperature";
+}
+
+function observedTimelineVisible() {
+  return state.source !== "observed" || state.observedLayer === "daily";
 }
 
 function isPolygonDataType(dataType = currentDataType()) {
@@ -876,7 +880,7 @@ function updateMapStamp(elementLabel, sourceLabel, dataType) {
     targetText = targetLabelForStamp(slot, dataType);
   } else {
     const realtimeTarget = state.realtimeStationMeta?.latest_time || state.suikeiManifest?.validtime;
-    if (state.observedLayer !== "temp" && realtimeTarget) {
+    if (!["temp", "daily"].includes(state.observedLayer) && realtimeTarget) {
       const realtimeParts = parseIsoLikeDateTime(realtimeTarget);
       targetText = realtimeParts ? formatDateTimeJa(realtimeParts) : realtimeTarget;
     } else {
@@ -1501,7 +1505,7 @@ function legendConfig() {
   if (dataType === "weather") {
     return {
       type: "weather",
-      title: "天気",
+      title: state.source === "observed" ? "推定天気" : "天気",
       items: ["Clear", "Cloudy", "Rain", "Rain/snow", "Snow"].map((level) => ({ level, ...weatherStyle(level) })),
     };
   }
@@ -1745,7 +1749,7 @@ function drawSuikeiTiles() {
 
 function updateHeadings() {
   const dataType = currentDataType();
-  const elementLabel = state.source === "observed" && state.observedLayer === "precip1h" ? "1時間降水量" : state.source === "observed" && state.observedLayer === "wind" ? "風向・風速" : dataType === "weather" ? "天気" : dataType === "sunshine" ? "日照時間" : dataType === "precipitation" ? "3時間降水量" : dataType === "snowfall" ? "3時間降雪量" : state.element === "temp" ? "リアルタイム気温" : state.element === "max" ? "最高気温" : "最低気温";
+  const elementLabel = state.source === "observed" && state.observedLayer === "precip1h" ? "1時間降水量" : state.source === "observed" && state.observedLayer === "wind" ? "風向・風速" : dataType === "weather" ? (state.source === "observed" ? "推定天気" : "天気") : dataType === "sunshine" ? "日照時間" : dataType === "precipitation" ? "3時間降水量" : dataType === "snowfall" ? "3時間降雪量" : state.element === "temp" ? "実況気温" : state.element === "max" ? "最高気温" : "最低気温";
   const modeLabel = state.mode === "anomaly" ? "平均との差" : "前日差";
   const sourceLabel = state.source === "forecast" ? "予測" : "実況";
   const slot = state.source === "forecast" ? currentForecastSlot() : null;
@@ -1777,6 +1781,8 @@ function updateHeadings() {
 }
 
 function syncTimelineFromElement() {
+  const timeline = document.querySelector(".map-timeline");
+  if (timeline) timeline.hidden = !observedTimelineVisible();
   const slots = state.source === "forecast" ? currentForecastSlots() : state.observedSlots;
   const labels = state.source === "forecast"
     ? slots.map((slot) => slot.label)
@@ -2956,7 +2962,7 @@ function updateControlAvailability() {
     els.observedLayerButtons.hidden = forecast;
     els.observedLayerButtons.querySelectorAll("[data-observed-layer]").forEach((button) => {
       const layer = button.dataset.observedLayer;
-      button.disabled = layer !== "temp" && !state.observedRealtimeLayers[layer]?.available;
+      button.disabled = !["daily", "temp"].includes(layer) && !state.observedRealtimeLayers[layer]?.available;
       button.classList.toggle("active", state.observedLayer === layer);
       button.title = button.disabled ? "データ準備中" : "";
     });
@@ -3139,8 +3145,9 @@ document.querySelectorAll(".tabs button").forEach((button) => {
       state.element = currentForecastSlot().element;
       els.elementSelect.value = state.element;
     } else {
-      state.observedLayer = "temp";
-      state.element = "temp";
+      state.observedLayer = "daily";
+      state.slotIndex = latestObservedSlotIndex("max");
+      state.element = currentObservedSlot()?.element || "max";
       els.elementSelect.value = state.element;
     }
     syncTimelineFromElement();
@@ -3152,7 +3159,12 @@ els.observedLayerButtons?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-observed-layer]");
   if (!button || button.disabled) return;
   state.observedLayer = button.dataset.observedLayer;
-  state.element = state.observedLayer === "temp" ? "temp" : state.observedLayer;
+  if (state.observedLayer === "daily") {
+    state.slotIndex = latestObservedSlotIndex("max");
+    state.element = currentObservedSlot()?.element || "max";
+  } else {
+    state.element = state.observedLayer === "temp" ? "temp" : state.observedLayer;
+  }
   state.mode = "value";
   els.modeSelect.value = "value";
   updateControlAvailability();
@@ -3338,6 +3350,13 @@ async function init() {
   await Promise.all([loadBoundaries(), loadPlaceLabels(), loadTemperatureExtremes()]);
   await Promise.all([loadForecastManifest(), loadObservedManifest()]);
   await loadSuikeiManifest();
+  if (state.source === "observed") {
+    if (state.observedLayer === "daily") {
+      state.element = currentObservedSlot()?.element || "max";
+    } else {
+      state.element = state.observedLayer === "temp" ? "temp" : state.observedLayer;
+    }
+  }
   document.querySelectorAll(".tabs button").forEach((button) => button.classList.toggle("active", button.dataset.source === state.source));
   els.forecastLayerSelect.value = state.forecastLayer;
   els.modeSelect.value = state.mode;
