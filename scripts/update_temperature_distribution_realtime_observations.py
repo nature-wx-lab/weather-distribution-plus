@@ -329,42 +329,29 @@ def collect_station_extremes(
         times = times[-max_steps:]
 
     values: dict[str, dict[str, float | str]] = {}
-    station_map: dict[str, str] = {}
-
     for value_time in times:
         payload = fetch_json(AMEDAS_MAP_URL.format(time_key=time_key(value_time)))
-        temp_ids = {amedas_id for amedas_id, row in payload.items() if isinstance(row.get("temp"), list)}
-        if not station_map:
-            for station in index["stations"]:
-                elevation = station.get("elevation_m")
-                if elevation is not None and float(elevation) > MAX_INTERPOLATION_ELEVATION_M:
-                    continue
-                amedas_id = nearest_amedas_id(station, amedas_table, temp_ids)
-                if amedas_id:
-                    station_map[station["station_key"]] = amedas_id
-        for station in index["stations"]:
-            elevation = station.get("elevation_m")
+        for amedas_id, observation in payload.items():
+            temp = observation.get("temp")
+            if not isinstance(temp, list) or not temp or temp[0] is None:
+                continue
+            station = amedas_table.get(amedas_id) or {}
+            if "lat" not in station or "lon" not in station:
+                continue
+            elevation = station.get("alt")
             if elevation is not None and float(elevation) > MAX_INTERPOLATION_ELEVATION_M:
                 continue
-            station_key = station["station_key"]
-            amedas_id = station_map.get(station_key)
-            if not amedas_id:
-                continue
-            temp = payload.get(amedas_id, {}).get("temp")
-            if not isinstance(temp, list) or not temp:
-                continue
-            temp_c = temp[0]
-            if temp_c is None:
-                continue
-            temp_f = float(temp_c)
+            temp_f = float(temp[0])
+            station_key = str(amedas_id)
+            station_name = str(station.get("kjName") or station.get("enName") or amedas_id)
             item = values.setdefault(
                 station_key,
                 {
                     "station_key": station_key,
-                    "name": station["name"],
-                    "region": station["region"],
-                    "lon": float(station["longitude"]),
-                    "lat": float(station["latitude"]),
+                    "name": station_name,
+                    "region": "",
+                    "lon": latlon_decimal(station["lon"]),
+                    "lat": latlon_decimal(station["lat"]),
                     "current": temp_f,
                     "current_time": value_time.isoformat(),
                     "max": temp_f,
@@ -750,7 +737,7 @@ def build(args: argparse.Namespace) -> None:
         "slots": slots,
         "station_count": max(len(records), official_station_count),
         "realtime_timeseries_station_count": len(records),
-        "daily_distribution_station_count": official_station_count,
+        "daily_distribution_station_count": max(len(records), official_station_count),
         "grid_count": len(grid_points_2d),
     }
     manifest_path.write_text(
