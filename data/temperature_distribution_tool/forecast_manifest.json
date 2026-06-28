@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-28T13:53:19+09:00",
+  "generated_at": "2026-06-28T14:03:09+09:00",
   "source": "JMA天気分布予報 targetTimes.json / *_temp_point / wm / r3 / s3 GeoJSON / VPFD地域時系列予報",
   "service_date": "2026-06-28",
   "daily_rollover_hour_jst": 6,
@@ -20,8 +20,8 @@
       "target_date": "2026-06-28",
       "basetime": "20260628020000",
       "validtime": "20260628090000",
-      "status": "available",
-      "message": ""
+      "status": "stale",
+      "message": "予測対象時刻を過ぎているため、実況の最高気温を参照ください。"
     },
     {
       "id": "tomorrow_min",
@@ -68,8 +68,8 @@
           "target_date": "2026-06-28",
           "basetime": "20260628020000",
           "validtime": "20260628090000",
-          "status": "available",
-          "message": ""
+          "status": "stale",
+          "message": "予測対象時刻を過ぎているため、実況の最高気温を参照ください。"
         },
         {
           "id": "tomorrow_min",
