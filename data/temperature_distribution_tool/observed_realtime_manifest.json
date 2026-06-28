@@ -1,13 +1,13 @@
 {
   "generator_version": 3,
-  "generated_at": "2026-06-29T00:04:28.490849+09:00",
-  "latest_time": "2026-06-28T23:50:00+09:00",
+  "generated_at": "2026-06-29T00:09:08.532053+09:00",
+  "latest_time": "2026-06-29T00:00:00+09:00",
   "source": "JMA AMeDAS latest_time.txt / data/map/{YYYYMMDDHHMM00}.json 10-minute observations",
   "realtime_layers": {
     "station_observations": {
       "json": "observed_realtime_station_observations.json",
       "csv": "observed_realtime_station_observations.csv",
-      "latest_time": "2026-06-28T23:50:00+09:00",
+      "latest_time": "2026-06-29T00:00:00+09:00",
       "station_count": 1282,
       "elements": {
         "temperature": {
@@ -37,24 +37,6 @@
   "daily_distribution_source": "JMA MDRR all-station max/min tables, IDW interpolated to the display grid",
   "days": 7,
   "slots": [
-    {
-      "id": "20260622_min",
-      "label": "22日最低",
-      "element": "min",
-      "target_date": "2026-06-22",
-      "target_time": "2026-06-22",
-      "status": "available",
-      "source": "daily"
-    },
-    {
-      "id": "20260622_max",
-      "label": "22日最高",
-      "element": "max",
-      "target_date": "2026-06-22",
-      "target_time": "2026-06-22",
-      "status": "available",
-      "source": "daily"
-    },
     {
       "id": "20260623_min",
       "label": "23日最低",
@@ -150,16 +132,34 @@
       "label": "28日最低",
       "element": "min",
       "target_date": "2026-06-28",
-      "target_time": "2026-06-28T23:50:00+09:00",
+      "target_time": "2026-06-28",
       "status": "available",
-      "source": "realtime"
+      "source": "daily"
     },
     {
       "id": "20260628_max",
       "label": "28日最高",
       "element": "max",
       "target_date": "2026-06-28",
-      "target_time": "2026-06-28T23:50:00+09:00",
+      "target_time": "2026-06-28",
+      "status": "available",
+      "source": "daily"
+    },
+    {
+      "id": "20260629_min",
+      "label": "29日最低",
+      "element": "min",
+      "target_date": "2026-06-29",
+      "target_time": "2026-06-29T00:00:00+09:00",
+      "status": "available",
+      "source": "realtime"
+    },
+    {
+      "id": "20260629_max",
+      "label": "29日最高",
+      "element": "max",
+      "target_date": "2026-06-29",
+      "target_time": "2026-06-29T00:00:00+09:00",
       "status": "available",
       "source": "realtime"
     }
