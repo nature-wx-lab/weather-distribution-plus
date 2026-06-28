@@ -37,6 +37,8 @@ const state = {
   realtimeStations: [],
   realtimeStationMeta: null,
   suikeiManifest: null,
+  suikeiManifestGeneratedAt: null,
+  suikeiSlotIndex: null,
   suikeiTileCache: new Map(),
   forecastLayers: null,
   points: [],
@@ -191,6 +193,32 @@ function currentObservedSlot() {
   return slots[Math.max(0, Math.min(state.slotIndex, slots.length - 1))] || slots[0];
 }
 
+function suikeiSlots() {
+  const slots = state.suikeiManifest?.slots;
+  if (Array.isArray(slots) && slots.length) return slots;
+  if (state.suikeiManifest?.validtime && state.suikeiManifest?.layers) {
+    return [{
+      basetime: state.suikeiManifest.basetime,
+      validtime: state.suikeiManifest.validtime,
+      layers: state.suikeiManifest.layers,
+    }];
+  }
+  return [];
+}
+
+function currentSuikeiSlot() {
+  const slots = suikeiSlots();
+  if (!slots.length) return null;
+  const index = Number.isInteger(state.suikeiSlotIndex)
+    ? Math.max(0, Math.min(state.suikeiSlotIndex, slots.length - 1))
+    : slots.length - 1;
+  return slots[index];
+}
+
+function isSuikeiObservedLayer(layer = state.observedLayer) {
+  return ["temp", "weather", "sunshine"].includes(layer);
+}
+
 function latestObservedSlotIndex(preferredElement = "max") {
   for (let i = state.observedSlots.length - 1; i >= 0; i -= 1) {
     if (state.observedSlots[i]?.element === preferredElement) return i;
@@ -209,7 +237,7 @@ function currentDataType() {
 }
 
 function observedTimelineVisible() {
-  return state.source !== "observed" || state.observedLayer === "daily";
+  return state.source !== "observed" || state.observedLayer === "daily" || isSuikeiObservedLayer();
 }
 
 function isPolygonDataType(dataType = currentDataType()) {
@@ -278,6 +306,18 @@ async function checkObservedDataUpdate() {
       const manifest = await manifestResponse.json();
       applyObservedManifest(manifest);
     }
+    const suikeiResponse = await fetch(SUIKEI_MANIFEST_URL, { cache: "no-store" });
+    if (suikeiResponse.ok) {
+      const suikeiManifest = await suikeiResponse.json();
+      if (suikeiManifest.generated_at && suikeiManifest.generated_at !== state.suikeiManifestGeneratedAt) {
+        applySuikeiManifest(suikeiManifest);
+        if (isSuikeiObservedLayer()) {
+          syncTimelineFromElement();
+          await loadData();
+          return;
+        }
+      }
+    }
     const dataResponse = await fetch(csvPath(), { method: "HEAD", cache: "no-store" });
     if (!dataResponse.ok) return;
     const signature = dataResponse.headers.get("last-modified") || dataResponse.headers.get("etag") || state.observedManifestGeneratedAt;
@@ -303,17 +343,37 @@ async function loadSuikeiManifest() {
   try {
     const response = await fetch(SUIKEI_MANIFEST_URL, { cache: "no-store" });
     if (!response.ok) throw new Error(String(response.status));
-    state.suikeiManifest = await response.json();
-    ["weather", "sunshine"].forEach((name) => {
-      const layer = state.suikeiManifest?.layers?.[name];
-      if (layer && state.suikeiManifest?.availability !== false) {
-        layer.availability = true;
-        state.observedRealtimeLayers[name] = { available: true };
-      }
-    });
+    applySuikeiManifest(await response.json());
   } catch {
     state.suikeiManifest = null;
   }
+}
+
+function applySuikeiManifest(manifest) {
+  const previousSlots = suikeiSlots();
+  const requestedIndex = state.suikeiSlotIndex;
+  const previousIndex = Number.isInteger(state.suikeiSlotIndex) ? state.suikeiSlotIndex : previousSlots.length - 1;
+  const previousValidtime = previousSlots[previousIndex]?.validtime;
+  const wasLatest = previousSlots.length === 0
+    ? !Number.isInteger(requestedIndex)
+    : previousIndex >= previousSlots.length - 1;
+  state.suikeiManifest = manifest;
+  state.suikeiManifestGeneratedAt = manifest.generated_at || null;
+  const slots = suikeiSlots();
+  const preservedIndex = slots.findIndex((slot) => slot.validtime === previousValidtime);
+  state.suikeiSlotIndex = previousSlots.length === 0 && Number.isInteger(requestedIndex)
+    ? Math.max(0, Math.min(requestedIndex, slots.length - 1))
+    : wasLatest
+      ? Math.max(0, slots.length - 1)
+      : preservedIndex >= 0 ? preservedIndex : Math.max(0, slots.length - 1);
+  ["temperature", "weather", "sunshine"].forEach((name) => {
+    const layer = currentSuikeiSlot()?.layers?.[name];
+    const observedName = name === "temperature" ? "temp" : name;
+    if (layer && manifest.availability !== false) {
+      layer.availability = true;
+      state.observedRealtimeLayers[observedName] = { available: true };
+    }
+  });
 }
 
 function applyObservedManifest(manifest) {
@@ -484,12 +544,16 @@ async function loadData() {
     draw();
     return;
   }
-  if (state.source === "observed" && ["weather", "sunshine"].includes(state.observedLayer)) {
+  if (state.source === "observed" && isSuikeiObservedLayer()) {
     state.points = [];
     state.realtimeStations = [];
-    const layer = state.suikeiManifest?.layers?.[state.observedLayer];
-    els.statusText.textContent = layer?.availability
-      ? `気象庁「推計気象分布」を表示中。対象時刻 ${state.suikeiManifest.validtime || layer.validtime || "--"}`
+    const slot = currentSuikeiSlot();
+    const layerKey = state.observedLayer === "temp" ? "temperature" : state.observedLayer;
+    const layer = slot?.layers?.[layerKey];
+    const targetParts = parseSuikeiTime(slot?.validtime);
+    const targetLabel = targetParts ? formatDateTimeJa(targetParts) : slot?.validtime || "--";
+    els.statusText.textContent = layer?.tile_template && state.suikeiManifest?.availability !== false
+      ? `気象庁「推計気象分布」を表示中。対象時刻 ${targetLabel}`
       : "推計気象分布のデータがありません。";
     updateHeadings();
     draw();
@@ -820,6 +884,22 @@ function parseJmaCompactTime(value) {
   };
 }
 
+function parseSuikeiTime(value) {
+  const text = String(value || "");
+  const match = text.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})?/);
+  if (!match) return parseIsoLikeDateTime(value);
+  const [, year, month, day, hour, minute = "00"] = match;
+  const jst = new Date(Date.UTC(
+    Number(year), Number(month) - 1, Number(day), Number(hour) + 9, Number(minute),
+  ));
+  return {
+    year: jst.getUTCFullYear(),
+    month: jst.getUTCMonth() + 1,
+    day: jst.getUTCDate(),
+    hour: jst.getUTCHours(),
+  };
+}
+
 function parseIsoLikeDateTime(value) {
   const text = String(value || "");
   const match = text.match(/^(\d{4})-(\d{2})-(\d{2})(?:T|\s)?(\d{2})?/);
@@ -879,9 +959,11 @@ function updateMapStamp(elementLabel, sourceLabel, dataType) {
   if (state.source === "forecast") {
     targetText = targetLabelForStamp(slot, dataType);
   } else {
-    const realtimeTarget = state.realtimeStationMeta?.latest_time || state.suikeiManifest?.validtime;
-    if (!["temp", "daily"].includes(state.observedLayer) && realtimeTarget) {
-      const realtimeParts = parseIsoLikeDateTime(realtimeTarget);
+    const realtimeTarget = isSuikeiObservedLayer()
+      ? currentSuikeiSlot()?.validtime
+      : state.realtimeStationMeta?.latest_time;
+    if (isSuikeiObservedLayer() && realtimeTarget) {
+      const realtimeParts = parseSuikeiTime(realtimeTarget);
       targetText = realtimeParts ? formatDateTimeJa(realtimeParts) : realtimeTarget;
     } else {
     const sourceDate = state.points[0]?.sourceDate || state.observedDate;
@@ -1502,6 +1584,19 @@ function drawZoomBadge() {
 
 function legendConfig() {
   const dataType = currentDataType();
+  if (state.source === "observed" && state.observedLayer === "temp") {
+    return {
+      type: "weather",
+      title: "気温",
+      items: [
+        ["40℃以上", "#8c3e65"], ["35℃", "#cf4381"], ["30℃", "#ff6252"],
+        ["25℃", "#ffb75e"], ["20℃", "#fff568"], ["15℃", "#ffffb2"],
+        ["10℃", "#fffef0"], ["5℃", "#cceef4"], ["0℃", "#82c7ef"],
+        ["-5℃", "#4d8cf5"], ["-10℃", "#3f53b6"], ["-15℃", "#706c9f"],
+        ["-20℃", "#9893b7"], ["-25℃以下", "#c8c4d5"],
+      ].map(([label, color]) => ({ label, color })),
+    };
+  }
   if (dataType === "weather") {
     return {
       type: "weather",
@@ -1700,9 +1795,10 @@ function suikeiTileUrl(template, z, x, y) {
 }
 
 function drawSuikeiTiles() {
-  if (state.source !== "observed" || !["weather", "sunshine"].includes(state.observedLayer)) return;
-  const layer = state.suikeiManifest?.layers?.[state.observedLayer];
-  if (!layer?.availability || !layer.tile_template) return;
+  if (state.source !== "observed" || !isSuikeiObservedLayer()) return;
+  const layerKey = state.observedLayer === "temp" ? "temperature" : state.observedLayer;
+  const layer = currentSuikeiSlot()?.layers?.[layerKey];
+  if (!layer?.tile_template || state.suikeiManifest?.availability === false) return;
   const z = Number(layer.native_zoom ?? state.suikeiManifest.native_zoom ?? 8);
   const coordinateZoom = z - 1; // JMA uses 512 px tiles, so x/y follow the preceding XYZ zoom.
   const boundsValue = layer.bounds || state.suikeiManifest.bounds || [122, 20, 150, 48];
@@ -1780,9 +1876,54 @@ function updateHeadings() {
   updateMapStamp(elementLabel, sourceLabel, dataType);
 }
 
+function syncSuikeiTimeline() {
+  const slots = suikeiSlots();
+  const timeline = document.querySelector(".map-timeline");
+  if (!slots.length) {
+    if (timeline) timeline.hidden = true;
+    return;
+  }
+  if (timeline) timeline.hidden = false;
+  const max = Math.max(0, slots.length - 1);
+  const value = Number.isInteger(state.suikeiSlotIndex)
+    ? Math.max(0, Math.min(state.suikeiSlotIndex, max))
+    : max;
+  state.suikeiSlotIndex = value;
+  const labels = slots.map((slot) => {
+    const parts = parseSuikeiTime(slot.validtime);
+    return parts ? `${parts.day}日${String(parts.hour).padStart(2, "0")}時` : slot.validtime || "--";
+  });
+  els.timelineRange.max = String(max);
+  els.timelineRange.value = String(value);
+  els.timelineRange.disabled = slots.length < 2;
+  const percent = max === 0 ? 50 : (value / max) * 100;
+  els.timelineRange.style.setProperty("--timeline-value", `${percent}%`);
+  els.timelineTicks.innerHTML = labels.map((_label, index) => {
+    const p = max === 0 ? 50 : (index / max) * 100;
+    const active = index === value ? " active" : "";
+    const parts = parseSuikeiTime(slots[index]?.validtime);
+    const major = index === 0 || index === max || index === value || parts?.hour % 6 === 0 ? " major" : "";
+    return `<span class="timeline-tick${active}${major}" style="left:${p}%"></span>`;
+  }).join("");
+  els.timelineBottom.innerHTML = labels.map((label, index) => {
+    const p = max === 0 ? 50 : (index / max) * 100;
+    const active = index === value ? " active" : "";
+    const parts = parseSuikeiTime(slots[index]?.validtime);
+    const show = index === 0 || index === max || index === value || parts?.hour % 6 === 0;
+    const hidden = show ? "" : " hidden-label";
+    return `<button type="button" class="timeline-label dense${active}${hidden}" data-timeline-index="${index}" style="left:${p}%;" aria-label="${label}へ移動"><span class="timeline-label-text">${label}</span></button>`;
+  }).join("");
+  els.timelinePrevButton.disabled = value === 0;
+  els.timelineNextButton.disabled = value === max;
+}
+
 function syncTimelineFromElement() {
   const timeline = document.querySelector(".map-timeline");
   if (timeline) timeline.hidden = !observedTimelineVisible();
+  if (state.source === "observed" && isSuikeiObservedLayer()) {
+    syncSuikeiTimeline();
+    return;
+  }
   const slots = state.source === "forecast" ? currentForecastSlots() : state.observedSlots;
   const labels = state.source === "forecast"
     ? slots.map((slot) => slot.label)
@@ -1863,6 +2004,12 @@ function setElementFromTimeline(value) {
     loadData();
     return;
   }
+  if (isSuikeiObservedLayer()) {
+    state.suikeiSlotIndex = Math.max(0, Math.min(Number(value), suikeiSlots().length - 1));
+    syncTimelineFromElement();
+    loadData();
+    return;
+  }
   const slot = state.observedSlots[Number(value)] || state.observedSlots[0];
   const previousIndex = state.slotIndex;
   state.slotIndex = Number(value);
@@ -1892,7 +2039,10 @@ function draw() {
   drawBoundaries();
   drawPlaceLabels();
   drawRecordMarkers();
-  const hasSuikei = state.source === "observed" && ["weather", "sunshine"].includes(state.observedLayer) && state.suikeiManifest?.layers?.[state.observedLayer]?.availability;
+  const suikeiLayerKey = state.observedLayer === "temp" ? "temperature" : state.observedLayer;
+  const hasSuikei = state.source === "observed" && isSuikeiObservedLayer()
+    && Boolean(currentSuikeiSlot()?.layers?.[suikeiLayerKey]?.tile_template)
+    && state.suikeiManifest?.availability !== false;
   if (!state.points.length && !state.weatherFeatures.length && !state.realtimeStations.length && !hasSuikei) {
     const slot = state.source === "forecast" ? currentForecastSlot() : null;
     const message = slot?.message || "表示できるデータがありません。";
@@ -3158,12 +3308,16 @@ document.querySelectorAll(".tabs button").forEach((button) => {
 els.observedLayerButtons?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-observed-layer]");
   if (!button || button.disabled) return;
+  const previousLayer = state.observedLayer;
   state.observedLayer = button.dataset.observedLayer;
   if (state.observedLayer === "daily") {
     state.slotIndex = latestObservedSlotIndex("max");
     state.element = currentObservedSlot()?.element || "max";
   } else {
     state.element = state.observedLayer === "temp" ? "temp" : state.observedLayer;
+    if (isSuikeiObservedLayer() && !isSuikeiObservedLayer(previousLayer)) {
+      state.suikeiSlotIndex = Math.max(0, suikeiSlots().length - 1);
+    }
   }
   state.mode = "value";
   els.modeSelect.value = "value";
@@ -3290,6 +3444,9 @@ function shareUrl() {
   if (state.source === "forecast") url.searchParams.set("layer", state.forecastLayer);
   else url.searchParams.set("layer", state.observedLayer);
   url.searchParams.set("slot", String(state.slotIndex));
+  if (state.source === "observed" && isSuikeiObservedLayer()) {
+    url.searchParams.set("suikei", String(state.suikeiSlotIndex ?? Math.max(0, suikeiSlots().length - 1)));
+  }
   url.searchParams.set("mode", state.mode);
   url.searchParams.set("period", state.period);
   url.searchParams.set("labels", state.showPlaceLabels ? "1" : "0");
@@ -3333,6 +3490,9 @@ function applyUrlState() {
   if (state.source === "observed" && layer) state.observedLayer = layer;
   const slot = Number(params.get("slot"));
   if (Number.isInteger(slot) && slot >= 0) state.slotIndex = slot;
+  const suikeiParam = params.get("suikei");
+  const suikei = Number(suikeiParam);
+  if (suikeiParam !== null && Number.isInteger(suikei) && suikei >= 0) state.suikeiSlotIndex = suikei;
   const mode = params.get("mode");
   if (["value", "anomaly", "previous"].includes(mode)) state.mode = mode;
   const period = params.get("period");

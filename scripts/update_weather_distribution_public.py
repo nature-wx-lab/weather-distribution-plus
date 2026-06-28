@@ -111,7 +111,7 @@ def main() -> None:
         "scripts/update_suikei_realtime_tiles.py",
         "--out-dir", str(DATA_DIR),
         "--workers", "4",
-        "--keep-slots", "1",
+        "--keep-slots", "48",
     ])
     run([
         py,
