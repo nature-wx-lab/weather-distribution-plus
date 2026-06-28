@@ -1974,17 +1974,23 @@ function drawPolygonValueLabels() {
   if (zoomRatio < 4) return;
   const occupied = [];
   state.weatherFeatures.forEach((feature) => {
-    const geometry = feature.geometry;
-    const polygon = geometry?.type === "Polygon" ? geometry.coordinates?.[0] : geometry?.coordinates?.[0]?.[0];
-    if (!polygon?.length) return;
-    const center = polygon.reduce((sum, pair) => [sum[0] + pair[0], sum[1] + pair[1]], [0, 0]).map((value) => value / polygon.length);
-    const [x, y] = lonLatToPixel(center[0], center[1]);
-    if (x < 30 || x > els.canvas.width - 30 || y < 30 || y > els.canvas.height - 30) return;
-    if (occupied.some((point) => Math.hypot(point.x - x, point.y - y) < 90)) return;
     const label = polygonLabel(feature.properties?.level);
     if (!label) return;
-    occupied.push({ x, y });
-    drawValueLabel(label, x, y);
+    const rings = feature.geometry?.type === "MultiPolygon"
+      ? feature.geometry.coordinates.flatMap((polygon) => polygon.slice(0, 1))
+      : (feature.geometry?.coordinates || []).slice(0, 24);
+    rings.forEach((ring) => {
+      if (!ring?.length) return;
+      const pixels = ring.map(([lon, lat]) => lonLatToPixel(lon, lat));
+      const xs = pixels.map((point) => point[0]), ys = pixels.map((point) => point[1]);
+      const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+      if (maxX - minX < 55 || maxY - minY < 38) return;
+      const x = (minX + maxX) / 2, y = (minY + maxY) / 2;
+      if (x < 30 || x > els.canvas.width - 30 || y < 30 || y > els.canvas.height - 30) return;
+      if (occupied.some((point) => Math.hypot(point.x - x, point.y - y) < 100)) return;
+      occupied.push({ x, y });
+      drawValueLabel(label, x, y);
+    });
   });
 }
 
