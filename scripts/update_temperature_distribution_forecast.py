@@ -34,6 +34,7 @@ WDIST_GEOJSON_URL,
     load_forecast_points,
     load_station_normals,
     parse_jma_time,
+    StationNormal,
 )
 
 JST = ZoneInfo("Asia/Tokyo")
@@ -122,6 +123,40 @@ def is_past_slot(slot_id: str, now: datetime) -> bool:
     return slot_id == "today_min" or (slot_id == "today_max" and now.hour >= 14)
 
 
+def station_difference_values(
+    forecast_points: list[tuple[float, float, float]],
+    references,
+) -> list[StationNormal]:
+    """Calculate differences at common locations before spatial interpolation.
+
+    Subtracting two independently interpolated absolute-temperature surfaces
+    leaves forecast terrain effects in the difference field. Sampling the JMA
+    forecast at each reference station, taking the difference there, and only
+    then interpolating removes that artificial mountain signature.
+    """
+    if not forecast_points or not references:
+        return []
+    forecast_lons = np.array([point[0] for point in forecast_points], dtype=np.float32)
+    forecast_lats = np.array([point[1] for point in forecast_points], dtype=np.float32)
+    forecast_values = np.array([point[2] for point in forecast_points], dtype=np.float32)
+    differences: list[StationNormal] = []
+    for reference in references:
+        cos_lat = math.cos(math.radians(reference.lat))
+        dist2 = ((forecast_lons - reference.lon) * cos_lat) ** 2 + (forecast_lats - reference.lat) ** 2
+        nearest = int(np.argmin(dist2))
+        if float(dist2[nearest]) > 0.12**2:
+            continue
+        differences.append(StationNormal(
+            station_key=reference.station_key,
+            name=reference.name,
+            region=reference.region,
+            lon=reference.lon,
+            lat=reference.lat,
+            normal_c=float(forecast_values[nearest]) - float(reference.normal_c),
+        ))
+    return differences
+
+
 def make_slot(slot_id: str, label: str, element: str, target_date, target: dict[str, str] | None, now: datetime, out_dir: Path) -> dict[str, object]:
     past = is_past_slot(slot_id, now)
     if target is None:
@@ -161,7 +196,9 @@ def write_forecast_points(slot: dict[str, object], forecast_points: list[tuple[f
     previous_date = target_date - timedelta(days=1)
     if previous_date <= observed_latest:
         previous_station_values = load_station_values(args.index, args.station_dir, str(slot["element"]), previous_date)
-        previous_grid = idw_values(forecast_points, previous_station_values)
+        previous_differences = station_difference_values(forecast_points, previous_station_values)
+        previous_diff_grid = idw_values(forecast_points, previous_differences)
+        previous_grid = np.array([point[2] for point in forecast_points]) - previous_diff_grid
     else:
         previous_path = args.out_dir / f"observed_{previous_date.strftime('%Y%m%d')}_{slot['element']}_anomaly_30y.csv"
         if not previous_path.exists():
@@ -171,6 +208,7 @@ def write_forecast_points(slot: dict[str, object], forecast_points: list[tuple[f
             for row in csv.DictReader(handle):
                 previous_values.append(float(row["observed_c"]))
         previous_grid = np.array(previous_values)
+        previous_diff_grid = np.array([point[2] for point in forecast_points]) - previous_grid
 
     for period in PERIODS:
         normals = load_station_normals(
@@ -180,13 +218,17 @@ def write_forecast_points(slot: dict[str, object], forecast_points: list[tuple[f
             period,
             str(slot["element"]),
         )
-        average_grid = idw_normals_for_points(forecast_points, normals)
+        normal_differences = station_difference_values(forecast_points, normals)
+        anomaly_grid = idw_normals_for_points(forecast_points, normal_differences)
+        average_grid = np.array([point[2] for point in forecast_points]) - anomaly_grid
         anomaly_rows = []
-        for (lon, lat, forecast), average, previous in zip(forecast_points, average_grid, previous_grid):
+        for (lon, lat, forecast), average, previous, anomaly_value, previous_value in zip(
+            forecast_points, average_grid, previous_grid, anomaly_grid, previous_diff_grid
+        ):
             average_f = float(average)
             previous_f = float(previous)
-            anomaly = forecast - average_f
-            previous_diff = forecast - previous_f
+            anomaly = float(anomaly_value)
+            previous_diff = float(previous_value)
             common = {
                 "longitude": f"{lon:.5f}",
                 "latitude": f"{lat:.5f}",

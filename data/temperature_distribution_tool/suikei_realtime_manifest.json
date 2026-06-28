@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "generated_at": "2026-06-28T12:25:30.582005Z",
+  "generated_at": "2026-06-28T12:59:33.793590Z",
   "source": "JMA estimated weather distribution (推計気象分布)",
   "source_target_times": "https://www.jma.go.jp/bosai/jmatile/data/suikeikishou/targetTimes.json",
   "basetime": "20260628120000",
@@ -40,6 +40,12 @@
       "tile_count": 169,
       "visible_tile_count": 40
     }
+  },
+  "temperature_labels": {
+    "file": "suikei_temperature_labels.json",
+    "validtime": "20260628120000",
+    "label_count": 5914,
+    "precision_c": 0.5
   },
   "slots": [
     {

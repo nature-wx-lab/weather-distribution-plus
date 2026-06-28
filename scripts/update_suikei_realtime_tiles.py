@@ -9,6 +9,7 @@ cross-origin canvas when the web app exports a PNG.
 from __future__ import annotations
 
 import argparse
+import gzip
 import io
 import json
 import math
@@ -24,15 +25,22 @@ from urllib.request import Request, urlopen
 
 from PIL import Image
 
+try:
+    import mapbox_vector_tile
+except ImportError:  # Installed by the public workflow requirements.
+    mapbox_vector_tile = None
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUT = ROOT / "data" / "temperature_distribution_tool"
 SOURCE_ROOT = "https://www.jma.go.jp/bosai/jmatile/data/suikeikishou"
 TARGET_TIMES_URL = f"{SOURCE_ROOT}/targetTimes.json"
+AMEDAS_TABLE_URL = "https://www.jma.go.jp/bosai/amedas/const/amedastable.json"
 USER_AGENT = "NatureWxLab-WeatherDistributionPlus/1.0"
 ELEMENTS = {"temperature": "temp", "weather": "wthr", "sunshine": "suns1h"}
 # The official data extent. A tighter Japan extent would omit remote islands.
 DATA_BOUNDS = (118.0, 20.0, 150.0, 48.0)  # west, south, east, north
+LABEL_ZOOM = 10
 
 
 def fetch(url: str, timeout: int = 30, attempts: int = 3) -> bytes:
@@ -72,6 +80,90 @@ def tile_coordinates(zoom: int) -> list[tuple[int, int, int]]:
         for x in range(lon_to_x(west, coordinate_zoom), lon_to_x(east, coordinate_zoom) + 1)
         for y in range(lat_to_y(north, coordinate_zoom), lat_to_y(south, coordinate_zoom) + 1)
     ]
+
+
+def amedas_label_tiles() -> list[tuple[int, int]]:
+    table = json.loads(fetch(AMEDAS_TABLE_URL).decode("utf-8"))
+    tiles: set[tuple[int, int]] = set()
+    for station in table.values():
+        try:
+            lat = float(station["lat"][0]) + float(station["lat"][1]) / 60.0
+            lon = float(station["lon"][0]) + float(station["lon"][1]) / 60.0
+        except (KeyError, TypeError, ValueError, IndexError):
+            continue
+        x = lon_to_x(lon, LABEL_ZOOM)
+        y = lat_to_y(lat, LABEL_ZOOM)
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                tiles.add((x + dx, y + dy))
+    return sorted(tiles)
+
+
+def label_lonlat(x: int, y: int, px: float, py: float, extent: int) -> tuple[float, float]:
+    n = 1 << LABEL_ZOOM
+    lon = (x + px / extent) / n * 360.0 - 180.0
+    mercator_y = y + (extent - py) / extent
+    lat = math.degrees(math.atan(math.sinh(math.pi * (1.0 - 2.0 * mercator_y / n))))
+    return lon, lat
+
+
+def download_temperature_label_tile(task: tuple[str, str, int, int]) -> list[dict]:
+    basetime, validtime, x, y = task
+    url = f"{SOURCE_ROOT}/{basetime}/none/{validtime}/surf/temp_pbfs/{LABEL_ZOOM}/{x}/{y}.pbf"
+    payload = fetch(url)
+    if not payload:
+        return []
+    if payload[:2] == b"\x1f\x8b":
+        payload = gzip.decompress(payload)
+    decoded = mapbox_vector_tile.decode(payload)
+    layer = decoded.get("grid") or {}
+    extent = int(layer.get("extent") or 4096)
+    labels = []
+    for feature in layer.get("features") or []:
+        props = feature.get("properties") or {}
+        try:
+            visible_zooms = json.loads(props.get("vzoom") or "[]")
+            value = float(props["temp"])
+            px, py = feature["geometry"]["coordinates"]
+        except (KeyError, TypeError, ValueError, json.JSONDecodeError):
+            continue
+        if LABEL_ZOOM not in visible_zooms:
+            continue
+        lon, lat = label_lonlat(x, y, float(px), float(py), extent)
+        if DATA_BOUNDS[0] <= lon <= DATA_BOUNDS[2] and DATA_BOUNDS[1] <= lat <= DATA_BOUNDS[3]:
+            labels.append({"longitude": round(lon, 5), "latitude": round(lat, 5), "temperature_c": value})
+    return labels
+
+
+def update_temperature_labels(out_dir: Path, target: dict, workers: int) -> dict:
+    if mapbox_vector_tile is None:
+        raise RuntimeError("mapbox-vector-tile is required for official temperature labels")
+    basetime, validtime = str(target["basetime"]), str(target["validtime"])
+    tasks = [(basetime, validtime, x, y) for x, y in amedas_label_tiles()]
+    labels: list[dict] = []
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        futures = [pool.submit(download_temperature_label_tile, task) for task in tasks]
+        for future in as_completed(futures):
+            labels.extend(future.result())
+    deduped = {
+        (row["longitude"], row["latitude"], row["temperature_c"]): row
+        for row in labels
+    }
+    payload = {
+        "schema_version": 1,
+        "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "source": "JMA estimated weather distribution temp_pbfs",
+        "basetime": basetime,
+        "validtime": validtime,
+        "label_zoom": LABEL_ZOOM,
+        "label_count": len(deduped),
+        "labels": sorted(deduped.values(), key=lambda row: (row["latitude"], row["longitude"])),
+    }
+    path = out_dir / "suikei_temperature_labels.json"
+    temporary = path.with_suffix(".json.tmp")
+    temporary.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
+    temporary.replace(path)
+    return payload
 
 
 def has_visible_pixels(payload: bytes) -> bool:
@@ -282,8 +374,14 @@ def main() -> None:
             for validtime in selected_ids
         )
     ):
-        print(json.dumps(existing_manifest, ensure_ascii=False, indent=2))
-        return
+        label_path = args.out_dir / "suikei_temperature_labels.json"
+        try:
+            label_payload = json.loads(label_path.read_text(encoding="utf-8"))
+        except (FileNotFoundError, json.JSONDecodeError, OSError):
+            label_payload = {}
+        if str(label_payload.get("validtime") or "") == selected_ids[-1]:
+            print(json.dumps(existing_manifest, ensure_ascii=False, indent=2))
+            return
     slots: list[dict] = []
     for index, target in enumerate(selected_targets, start=1):
         validtime = str(target["validtime"])
@@ -299,6 +397,7 @@ def main() -> None:
         slots.append(download_slot(args.out_dir, target, zooms, args.workers))
 
     latest = slots[-1]
+    temperature_labels = update_temperature_labels(args.out_dir, selected_targets[-1], args.workers)
     manifest = {
         "schema_version": 2,
         "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
@@ -316,6 +415,12 @@ def main() -> None:
         "resolution_note": "Official ~1 km hourly analyses; the latest 48 target times are mirrored. Native z=8 tiles are scaled outside the native zoom.",
         "bounds": {"west": DATA_BOUNDS[0], "south": DATA_BOUNDS[1], "east": DATA_BOUNDS[2], "north": DATA_BOUNDS[3]},
         "layers": latest["layers"],
+        "temperature_labels": {
+            "file": "suikei_temperature_labels.json",
+            "validtime": temperature_labels["validtime"],
+            "label_count": temperature_labels["label_count"],
+            "precision_c": 0.5,
+        },
         "slots": slots,
     }
     temporary_manifest = manifest_path.with_suffix(".json.tmp")

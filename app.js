@@ -40,6 +40,7 @@ const state = {
   suikeiManifestGeneratedAt: null,
   suikeiSlotIndex: null,
   suikeiTileCache: new Map(),
+  suikeiTemperatureLabels: null,
   forecastLayers: null,
   points: [],
   weatherFeatures: [],
@@ -311,6 +312,7 @@ async function checkObservedDataUpdate() {
       const suikeiManifest = await suikeiResponse.json();
       if (suikeiManifest.generated_at && suikeiManifest.generated_at !== state.suikeiManifestGeneratedAt) {
         applySuikeiManifest(suikeiManifest);
+        await loadSuikeiTemperatureLabels();
         if (isSuikeiObservedLayer()) {
           syncTimelineFromElement();
           await loadData();
@@ -344,8 +346,24 @@ async function loadSuikeiManifest() {
     const response = await fetch(SUIKEI_MANIFEST_URL, { cache: "no-store" });
     if (!response.ok) throw new Error(String(response.status));
     applySuikeiManifest(await response.json());
+    await loadSuikeiTemperatureLabels();
   } catch {
     state.suikeiManifest = null;
+  }
+}
+
+async function loadSuikeiTemperatureLabels() {
+  const file = state.suikeiManifest?.temperature_labels?.file;
+  if (!file) {
+    state.suikeiTemperatureLabels = null;
+    return;
+  }
+  try {
+    const response = await fetch(`${DATA_ROOT}/${file}`, { cache: "no-store" });
+    if (!response.ok) throw new Error(String(response.status));
+    state.suikeiTemperatureLabels = await response.json();
+  } catch {
+    state.suikeiTemperatureLabels = null;
   }
 }
 
@@ -1906,7 +1924,7 @@ function drawValueLabel(text, x, y) {
 function drawPointValueLabels() {
   if (currentDataType() !== "temperature" || !state.points.length) return;
   const zoomRatio = state.view?.scale / (state.minScale || state.view?.scale || 1);
-  if (zoomRatio < 4) return;
+  if (zoomRatio < 10) return;
   const spacing = 140;
   const buckets = new Map();
   state.points.forEach((point) => {
@@ -1919,14 +1937,13 @@ function drawPointValueLabels() {
     const score = (x - cx) ** 2 + (y - cy) ** 2;
     if (!buckets.has(key) || score < buckets.get(key).score) buckets.set(key, { point, x, y, score });
   });
-  buckets.forEach(({ point, x, y }) => drawValueLabel(valueForPoint(point).toFixed(1), x, y));
+  buckets.forEach(({ point, x, y }) => {
+    const value = valueForPoint(point);
+    drawValueLabel(Number.isInteger(value) ? String(value) : value.toFixed(1), x, y);
+  });
 }
 
 function suikeiPalette() {
-  if (state.observedLayer === "temp") return [
-    [[0,150,255], "0"], [[185,235,255], "5"], [[255,255,240], "10"],
-    [[255,255,150], "15"], [[250,245,0], "20"], [[255,153,0], "25"], [[255,40,0], "30"],
-  ];
   if (state.observedLayer === "sunshine") return [
     [[120,120,120], "0.0"], [[154,154,154], "0.2"], [[188,188,188], "0.4"],
     [[224,224,224], "0.6"], [[240,230,136], "0.8"], [[248,176,0], "0.9"], [[244,80,56], "1.0"],
@@ -1946,7 +1963,25 @@ function nearestPaletteLabel(rgb, palette) {
 function drawSuikeiValueLabels() {
   if (state.source !== "observed" || !isSuikeiObservedLayer()) return;
   const zoomRatio = state.view?.scale / (state.minScale || state.view?.scale || 1);
-  if (zoomRatio < 4) return;
+  if (zoomRatio < 10) return;
+  if (state.observedLayer === "temp") {
+    const payload = state.suikeiTemperatureLabels;
+    if (!payload || String(payload.validtime) !== String(currentSuikeiSlot()?.validtime)) return;
+    const spacing = 140;
+    const buckets = new Map();
+    for (const label of payload.labels || []) {
+      const [x, y] = lonLatToPixel(Number(label.longitude), Number(label.latitude));
+      if (x < 24 || x > els.canvas.width - 24 || y < 24 || y > els.canvas.height - 24) continue;
+      const value = Number(label.temperature_c);
+      if (!Number.isFinite(value)) continue;
+      const bx = Math.floor(x / spacing), by = Math.floor(y / spacing), key = `${bx},${by}`;
+      const cx = (bx + 0.5) * spacing, cy = (by + 0.5) * spacing;
+      const score = (x - cx) ** 2 + (y - cy) ** 2;
+      if (!buckets.has(key) || score < buckets.get(key).score) buckets.set(key, { value, x, y, score });
+    }
+    buckets.forEach(({ value, x, y }) => drawValueLabel(Number.isInteger(value) ? String(value) : value.toFixed(1), x, y));
+    return;
+  }
   const palette = suikeiPalette();
   if (!palette.length) return;
   const spacing = 150;
@@ -1971,7 +2006,7 @@ function polygonLabel(level) {
 function drawPolygonValueLabels() {
   if (!isPolygonDataType() || !state.weatherFeatures.length) return;
   const zoomRatio = state.view?.scale / (state.minScale || state.view?.scale || 1);
-  if (zoomRatio < 4) return;
+  if (zoomRatio < 10) return;
   const occupied = [];
   state.weatherFeatures.forEach((feature) => {
     const label = polygonLabel(feature.properties?.level);
