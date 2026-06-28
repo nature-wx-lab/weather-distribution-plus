@@ -1931,9 +1931,6 @@ function suikeiPalette() {
     [[120,120,120], "0.0"], [[154,154,154], "0.2"], [[188,188,188], "0.4"],
     [[224,224,224], "0.6"], [[240,230,136], "0.8"], [[248,176,0], "0.9"], [[244,80,56], "1.0"],
   ];
-  if (state.observedLayer === "weather") return [
-    [[255,170,0], "晴"], [[170,170,170], "曇"], [[0,65,255], "雨"], [[242,242,255], "雪"],
-  ];
   return [];
 }
 
@@ -1966,7 +1963,7 @@ function drawSuikeiValueLabels() {
 }
 
 function polygonLabel(level) {
-  if (currentDataType() === "weather") return weatherStyle(level).label;
+  if (currentDataType() === "weather") return "";
   const match = String(level || "").match(/-?\d+(?:\.\d+)?/);
   return match ? match[0] : "";
 }
