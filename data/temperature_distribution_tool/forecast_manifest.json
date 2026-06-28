@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-29T07:50:52+09:00",
+  "generated_at": "2026-06-29T07:54:24+09:00",
   "source": "JMA天気分布予報 targetTimes.json / *_temp_point / wm / r3 / s3 GeoJSON / VPFD地域時系列予報",
   "service_date": "2026-06-29",
   "daily_rollover_hour_jst": 6,
@@ -21,7 +21,9 @@
       "basetime": "20260628200000",
       "validtime": "20260629090000",
       "status": "available",
-      "message": ""
+      "message": "",
+      "previous_comparison_source": "observed_daily",
+      "previous_comparison_date": "2026-06-28"
     },
     {
       "id": "tomorrow_min",
@@ -31,7 +33,9 @@
       "basetime": "20260628200000",
       "validtime": "20260630000000",
       "status": "available",
-      "message": ""
+      "message": "",
+      "previous_comparison_source": "observed_realtime",
+      "previous_comparison_date": "2026-06-29"
     },
     {
       "id": "tomorrow_max",
@@ -41,7 +45,9 @@
       "basetime": "20260628200000",
       "validtime": "20260630090000",
       "status": "available",
-      "message": ""
+      "message": "",
+      "previous_comparison_source": "forecast",
+      "previous_comparison_date": "2026-06-29"
     }
   ],
   "vpfd": {
@@ -69,7 +75,9 @@
           "basetime": "20260628200000",
           "validtime": "20260629090000",
           "status": "available",
-          "message": ""
+          "message": "",
+          "previous_comparison_source": "observed_daily",
+          "previous_comparison_date": "2026-06-28"
         },
         {
           "id": "tomorrow_min",
@@ -79,7 +87,9 @@
           "basetime": "20260628200000",
           "validtime": "20260630000000",
           "status": "available",
-          "message": ""
+          "message": "",
+          "previous_comparison_source": "observed_realtime",
+          "previous_comparison_date": "2026-06-29"
         },
         {
           "id": "tomorrow_max",
@@ -89,7 +99,9 @@
           "basetime": "20260628200000",
           "validtime": "20260630090000",
           "status": "available",
-          "message": ""
+          "message": "",
+          "previous_comparison_source": "forecast",
+          "previous_comparison_date": "2026-06-29"
         }
       ]
     },

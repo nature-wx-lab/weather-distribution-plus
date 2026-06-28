@@ -157,6 +157,30 @@ def station_difference_values(
     return differences
 
 
+def load_previous_forecast_grid(
+    out_dir: Path,
+    slot_id: str,
+    target_date,
+    forecast_points: list[tuple[float, float, float]],
+) -> np.ndarray | None:
+    """Load the preceding day's forecast on the identical display grid."""
+    path = out_dir / f"forecast_{slot_id}_anomaly_30y.csv"
+    if not path.exists():
+        return None
+    values: list[float] = []
+    with path.open("r", encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    if len(rows) != len(forecast_points):
+        return None
+    for row, (lon, lat, _) in zip(rows, forecast_points):
+        if row.get("target_date") != target_date.isoformat() or row.get("forecast_c") in (None, ""):
+            return None
+        if abs(float(row["longitude"]) - lon) > 0.001 or abs(float(row["latitude"]) - lat) > 0.001:
+            return None
+        values.append(float(row["forecast_c"]))
+    return np.array(values)
+
+
 def make_slot(slot_id: str, label: str, element: str, target_date, target: dict[str, str] | None, now: datetime, out_dir: Path) -> dict[str, object]:
     past = is_past_slot(slot_id, now)
     if target is None:
@@ -194,11 +218,24 @@ def write_forecast_points(slot: dict[str, object], forecast_points: list[tuple[f
     observed_latest = datetime.strptime(index["current_year"]["latest_date"], "%Y-%m-%d").date()
     target_date = parse_jma_time(validtime).date()
     previous_date = target_date - timedelta(days=1)
-    if previous_date <= observed_latest:
+    previous_forecast_grid = None
+    if str(slot["id"]).startswith("tomorrow_"):
+        previous_forecast_grid = load_previous_forecast_grid(
+            args.out_dir,
+            f"today_{slot['element']}",
+            previous_date,
+            forecast_points,
+        )
+    if previous_forecast_grid is not None:
+        previous_grid = previous_forecast_grid
+        previous_diff_grid = np.array([point[2] for point in forecast_points]) - previous_grid
+        slot["previous_comparison_source"] = "forecast"
+    elif previous_date <= observed_latest:
         previous_station_values = load_station_values(args.index, args.station_dir, str(slot["element"]), previous_date)
         previous_differences = station_difference_values(forecast_points, previous_station_values)
         previous_diff_grid = idw_values(forecast_points, previous_differences)
         previous_grid = np.array([point[2] for point in forecast_points]) - previous_diff_grid
+        slot["previous_comparison_source"] = "observed_daily"
     else:
         previous_path = args.out_dir / f"observed_{previous_date.strftime('%Y%m%d')}_{slot['element']}_anomaly_30y.csv"
         if not previous_path.exists():
@@ -209,6 +246,8 @@ def write_forecast_points(slot: dict[str, object], forecast_points: list[tuple[f
                 previous_values.append(float(row["observed_c"]))
         previous_grid = np.array(previous_values)
         previous_diff_grid = np.array([point[2] for point in forecast_points]) - previous_grid
+        slot["previous_comparison_source"] = "observed_realtime"
+    slot["previous_comparison_date"] = previous_date.isoformat()
 
     for period in PERIODS:
         normals = load_station_normals(
