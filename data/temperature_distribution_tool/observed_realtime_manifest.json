@@ -1,6 +1,6 @@
 {
   "generator_version": 3,
-  "generated_at": "2026-06-29T00:09:08.532053+09:00",
+  "generated_at": "2026-06-29T00:12:45.959796+09:00",
   "latest_time": "2026-06-29T00:00:00+09:00",
   "source": "JMA AMeDAS latest_time.txt / data/map/{YYYYMMDDHHMM00}.json 10-minute observations",
   "realtime_layers": {
@@ -164,8 +164,8 @@
       "source": "realtime"
     }
   ],
-  "station_count": 914,
+  "station_count": 154,
   "realtime_timeseries_station_count": 154,
-  "daily_distribution_station_count": 914,
+  "daily_distribution_station_count": 0,
   "grid_count": 31296
 }
