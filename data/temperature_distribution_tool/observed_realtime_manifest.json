@@ -1,14 +1,14 @@
 {
   "generator_version": 3,
-  "generated_at": "2026-06-28T21:03:23.809168+09:00",
-  "latest_time": "2026-06-28T20:50:00+09:00",
+  "generated_at": "2026-06-28T21:13:56.474094+09:00",
+  "latest_time": "2026-06-28T21:00:00+09:00",
   "source": "JMA AMeDAS latest_time.txt / data/map/{YYYYMMDDHHMM00}.json 10-minute observations",
   "realtime_layers": {
     "station_observations": {
       "json": "observed_realtime_station_observations.json",
       "csv": "observed_realtime_station_observations.csv",
-      "latest_time": "2026-06-28T20:50:00+09:00",
-      "station_count": 1283,
+      "latest_time": "2026-06-28T21:00:00+09:00",
+      "station_count": 1282,
       "elements": {
         "temperature": {
           "field": "temperature_c",
@@ -18,7 +18,7 @@
         "precipitation_1h": {
           "field": "precipitation_1h_mm",
           "unit": "mm",
-          "station_count": 1282
+          "station_count": 1281
         },
         "wind_speed": {
           "field": "wind_speed_ms",
@@ -150,7 +150,7 @@
       "label": "28日最低",
       "element": "min",
       "target_date": "2026-06-28",
-      "target_time": "2026-06-28T20:50:00+09:00",
+      "target_time": "2026-06-28T21:00:00+09:00",
       "status": "available",
       "source": "realtime"
     },
@@ -159,7 +159,7 @@
       "label": "28日最高",
       "element": "max",
       "target_date": "2026-06-28",
-      "target_time": "2026-06-28T20:50:00+09:00",
+      "target_time": "2026-06-28T21:00:00+09:00",
       "status": "available",
       "source": "realtime"
     }
