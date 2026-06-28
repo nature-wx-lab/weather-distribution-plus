@@ -1189,6 +1189,10 @@ function drawPlaceLabels() {
 
 function selectedObservedDateKey() {
   if (state.source !== "observed") return "";
+  if (isSuikeiObservedLayer()) {
+    const parts = parseSuikeiTime(currentSuikeiSlot()?.validtime);
+    if (parts) return `${parts.year}-${String(parts.month).padStart(2, "0")}-${String(parts.day).padStart(2, "0")}`;
+  }
   const slot = currentObservedSlot();
   return dateKey(slot?.target_date || state.points?.[0]?.sourceDate || state.observedDate || "");
 }
@@ -1222,6 +1226,30 @@ function activeRecordMarkers() {
     }
   }
   return markers;
+}
+
+function recordUpdateRows(day, recordType) {
+  if (!day?.updates) return [];
+  const prefix = state.element === "temp" ? "" : state.element === "min" ? "min_" : "max_";
+  const suffix = recordType === "all_time" ? "_all_time" : "_monthly";
+  return Object.entries(day.updates)
+    .filter(([key]) => (!prefix || key.startsWith(prefix)) && key.endsWith(suffix))
+    .flatMap(([, rows]) => rows || [])
+    .filter((row) => row?.matched !== false);
+}
+
+function renderRecordList(day, recordType) {
+  const month = Number(String(day?.date || "").slice(5, 7));
+  const title = recordType === "all_time"
+    ? "観測史上1位"
+    : `${Number.isFinite(month) && month > 0 ? month : "その月"}月としての1位`;
+  const rows = recordUpdateRows(day, recordType);
+  if (!rows.length) {
+    return `<section class="record-list"><h4>${escapeHtml(title)}</h4><p class="ranking-empty">更新記録なし</p></section>`;
+  }
+  return `<section class="record-list"><h4>${escapeHtml(title)}</h4><div class="record-table-wrap"><table class="record-table"><thead><tr><th>地点</th><th>更新値</th><th>従来記録</th><th>時刻</th></tr></thead><tbody>${rows.map((row) => (
+    `<tr><td>${escapeHtml(`${row.prefecture || ""} ${row.station || ""}`.trim())}</td><td>${escapeHtml(row.value)}℃</td><td>${escapeHtml(row.previous_record || "--")}℃${row.previous_record_date ? `<small>${escapeHtml(row.previous_record_date)}</small>` : ""}</td><td>${escapeHtml(row.time || "--")}</td></tr>`
+  )).join("")}</tbody></table></div></section>`;
 }
 
 function drawRecordMarkers() {
@@ -1417,18 +1445,36 @@ function updateRankingPanel() {
   if (!els.rankingPanel) return;
   const dataType = currentDataType();
   const forecastRankable = state.source === "forecast" && dataType === "temperature" && state.forecastLayer === "daily";
-  const observedRankable = state.source === "observed";
+  const observedRankable = state.source === "observed" && ["daily", "temp"].includes(state.observedLayer);
   const day = forecastRankable ? forecastRankingData() : selectedExtremeDay();
-  els.rankingPanel.hidden = !state.showRankingPanel || !(forecastRankable || observedRankable);
+  const recordPanelOpen = state.showRecordMarkers && observedRankable;
+  els.rankingPanel.hidden = !(state.showRankingPanel || recordPanelOpen) || !(forecastRankable || observedRankable);
   els.rankingPanelButton?.classList.toggle("active", state.showRankingPanel);
   els.rankingPanelButton?.setAttribute("aria-pressed", state.showRankingPanel ? "true" : "false");
+  els.recordMarkersButton?.classList.toggle("active", recordPanelOpen);
+  els.recordMarkersButton?.setAttribute("aria-pressed", recordPanelOpen ? "true" : "false");
   if (els.rankingPanel.hidden) return;
   applyRankingPanelPosition();
   if (!day) {
-    els.rankingPanel.innerHTML = `<div class="ranking-head"><strong>気温ランキング</strong></div><p class="ranking-empty">ランキングデータを読み込めません。</p>`;
+    els.rankingPanel.innerHTML = `<div class="ranking-head"><strong>${recordPanelOpen ? "記録更新" : "気温ランキング"}</strong></div><p class="ranking-empty">データを読み込めません。</p>`;
     return;
   }
   const status = rankingStatusInfo(day);
+  if (recordPanelOpen) {
+    const elementName = state.element === "temp" ? "気温" : state.element === "min" ? "最低気温" : "最高気温";
+    els.rankingPanel.innerHTML = `
+      <div class="ranking-head">
+        <div><div class="ranking-title-row"><strong>${escapeHtml(day.label || day.date)} ${elementName}の記録更新</strong><span class="ranking-status ${status.className}"><b>${status.label}</b><span>${status.text}</span></span></div><span>気象庁「観測史上1位の値 更新状況」</span></div>
+        <button type="button" id="rankingPanelCloseButton" aria-label="閉じる">×</button>
+      </div>
+      <div class="record-grid">${renderRecordList(day, "all_time")}${renderRecordList(day, "monthly")}</div>`;
+    wireRankingPanelDrag();
+    document.getElementById("rankingPanelCloseButton")?.addEventListener("click", () => {
+      state.showRecordMarkers = false;
+      updateRankingPanel();
+    }, { once: true });
+    return;
+  }
   els.rankingPanel.innerHTML = `
     <div class="ranking-head">
       <div>
@@ -1843,6 +1889,108 @@ function drawSuikeiTiles() {
   }
 }
 
+function drawValueLabel(text, x, y) {
+  ctx.save();
+  ctx.font = "900 17px -apple-system, BlinkMacSystemFont, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.lineJoin = "round";
+  ctx.lineWidth = 5;
+  ctx.strokeStyle = "rgba(255,255,255,0.92)";
+  ctx.fillStyle = "rgba(25,35,44,0.92)";
+  ctx.strokeText(text, x, y);
+  ctx.fillText(text, x, y);
+  ctx.restore();
+}
+
+function drawPointValueLabels() {
+  if (currentDataType() !== "temperature" || !state.points.length) return;
+  const zoomRatio = state.view?.scale / (state.minScale || state.view?.scale || 1);
+  if (zoomRatio < 4) return;
+  const spacing = 140;
+  const buckets = new Map();
+  state.points.forEach((point) => {
+    const value = valueForPoint(point);
+    if (!Number.isFinite(value)) return;
+    const [x, y] = lonLatToPixel(point.lon, point.lat);
+    if (x < 24 || x > els.canvas.width - 24 || y < 24 || y > els.canvas.height - 24) return;
+    const bx = Math.floor(x / spacing), by = Math.floor(y / spacing), key = `${bx},${by}`;
+    const cx = (bx + 0.5) * spacing, cy = (by + 0.5) * spacing;
+    const score = (x - cx) ** 2 + (y - cy) ** 2;
+    if (!buckets.has(key) || score < buckets.get(key).score) buckets.set(key, { point, x, y, score });
+  });
+  buckets.forEach(({ point, x, y }) => drawValueLabel(valueForPoint(point).toFixed(1), x, y));
+}
+
+function suikeiPalette() {
+  if (state.observedLayer === "temp") return [
+    [[0,150,255], "0"], [[185,235,255], "5"], [[255,255,240], "10"],
+    [[255,255,150], "15"], [[250,245,0], "20"], [[255,153,0], "25"], [[255,40,0], "30"],
+  ];
+  if (state.observedLayer === "sunshine") return [
+    [[120,120,120], "0.0"], [[154,154,154], "0.2"], [[188,188,188], "0.4"],
+    [[224,224,224], "0.6"], [[240,230,136], "0.8"], [[248,176,0], "0.9"], [[244,80,56], "1.0"],
+  ];
+  if (state.observedLayer === "weather") return [
+    [[255,170,0], "晴"], [[170,170,170], "曇"], [[0,65,255], "雨"], [[242,242,255], "雪"],
+  ];
+  return [];
+}
+
+function nearestPaletteLabel(rgb, palette) {
+  let best = null;
+  palette.forEach(([color, label]) => {
+    const distance = color.reduce((sum, value, index) => sum + (value - rgb[index]) ** 2, 0);
+    if (!best || distance < best.distance) best = { label, distance };
+  });
+  return best && best.distance < 5000 ? best.label : null;
+}
+
+function drawSuikeiValueLabels() {
+  if (state.source !== "observed" || !isSuikeiObservedLayer()) return;
+  const zoomRatio = state.view?.scale / (state.minScale || state.view?.scale || 1);
+  if (zoomRatio < 4) return;
+  const palette = suikeiPalette();
+  if (!palette.length) return;
+  const spacing = 150;
+  for (let y = spacing / 2; y < els.canvas.height; y += spacing) {
+    for (let x = spacing / 2; x < els.canvas.width; x += spacing) {
+      const [lon, lat] = pixelToLonLat(x, y);
+      if (!isLandPoint(lon, lat)) continue;
+      const pixel = ctx.getImageData(Math.round(x), Math.round(y), 1, 1).data;
+      if (pixel[3] < 80) continue;
+      const label = nearestPaletteLabel(pixel, palette);
+      if (label) drawValueLabel(label, x, y);
+    }
+  }
+}
+
+function polygonLabel(level) {
+  if (currentDataType() === "weather") return weatherStyle(level).label;
+  const match = String(level || "").match(/-?\d+(?:\.\d+)?/);
+  return match ? match[0] : "";
+}
+
+function drawPolygonValueLabels() {
+  if (!isPolygonDataType() || !state.weatherFeatures.length) return;
+  const zoomRatio = state.view?.scale / (state.minScale || state.view?.scale || 1);
+  if (zoomRatio < 4) return;
+  const occupied = [];
+  state.weatherFeatures.forEach((feature) => {
+    const geometry = feature.geometry;
+    const polygon = geometry?.type === "Polygon" ? geometry.coordinates?.[0] : geometry?.coordinates?.[0]?.[0];
+    if (!polygon?.length) return;
+    const center = polygon.reduce((sum, pair) => [sum[0] + pair[0], sum[1] + pair[1]], [0, 0]).map((value) => value / polygon.length);
+    const [x, y] = lonLatToPixel(center[0], center[1]);
+    if (x < 30 || x > els.canvas.width - 30 || y < 30 || y > els.canvas.height - 30) return;
+    if (occupied.some((point) => Math.hypot(point.x - x, point.y - y) < 90)) return;
+    const label = polygonLabel(feature.properties?.level);
+    if (!label) return;
+    occupied.push({ x, y });
+    drawValueLabel(label, x, y);
+  });
+}
+
 function updateHeadings() {
   const dataType = currentDataType();
   const elementLabel = state.source === "observed" && state.observedLayer === "precip1h" ? "1時間降水量" : state.source === "observed" && state.observedLayer === "wind" ? "風向・風速" : dataType === "weather" ? (state.source === "observed" ? "推定天気" : "天気") : dataType === "sunshine" ? "日照時間" : dataType === "precipitation" ? "3時間降水量" : dataType === "snowfall" ? "3時間降雪量" : state.element === "temp" ? "実況気温" : state.element === "max" ? "最高気温" : "最低気温";
@@ -2037,8 +2185,10 @@ function draw() {
   drawSuikeiTiles();
   drawWeatherPolygons();
   drawBoundaries();
+  drawPointValueLabels();
+  drawSuikeiValueLabels();
+  drawPolygonValueLabels();
   drawPlaceLabels();
-  drawRecordMarkers();
   const suikeiLayerKey = state.observedLayer === "temp" ? "temperature" : state.observedLayer;
   const hasSuikei = state.source === "observed" && isSuikeiObservedLayer()
     && Boolean(currentSuikeiSlot()?.layers?.[suikeiLayerKey]?.tile_template)
@@ -3080,7 +3230,8 @@ function updateControlAvailability() {
   const dataType = currentDataType();
   const rawOnly = state.source === "observed" && state.element === "temp";
   const forecastRankable = forecast && dataType === "temperature" && state.forecastLayer === "daily";
-  const rankingAvailable = state.source === "observed" || forecastRankable;
+  const observedTemperatureLayer = state.source === "observed" && ["daily", "temp"].includes(state.observedLayer);
+  const rankingAvailable = observedTemperatureLayer || forecastRankable;
   els.forecastLayerSelect.disabled = !forecast;
   els.modeSelect.disabled = dataType !== "temperature" || state.forecastLayer === "temp3h" || rawOnly;
   els.periodSelect.disabled = dataType !== "temperature" || state.mode !== "anomaly" || state.forecastLayer === "temp3h" || rawOnly;
@@ -3089,7 +3240,7 @@ function updateControlAvailability() {
     els.modeSelect.value = "value";
   }
   if (els.recordMarkersButton) {
-    els.recordMarkersButton.disabled = state.source !== "observed";
+    els.recordMarkersButton.disabled = !observedTemperatureLayer;
     if (els.recordMarkersButton.disabled && state.showRecordMarkers) {
       state.showRecordMarkers = false;
       els.recordMarkersButton.classList.remove("active");
@@ -3403,16 +3554,16 @@ els.placeLabelsToggle.addEventListener("change", () => {
 });
 
 els.recordMarkersButton?.addEventListener("click", () => {
-  if (els.recordMarkersButton.disabled || state.source !== "observed") return;
+  if (els.recordMarkersButton.disabled) return;
   state.showRecordMarkers = !state.showRecordMarkers;
-  els.recordMarkersButton.classList.toggle("active", state.showRecordMarkers);
-  els.recordMarkersButton.setAttribute("aria-pressed", state.showRecordMarkers ? "true" : "false");
-  draw();
+  if (state.showRecordMarkers) state.showRankingPanel = false;
+  updateRankingPanel();
 });
 
 els.rankingPanelButton?.addEventListener("click", () => {
   if (els.rankingPanelButton.disabled) return;
   state.showRankingPanel = !state.showRankingPanel;
+  if (state.showRankingPanel) state.showRecordMarkers = false;
   updateRankingPanel();
 });
 

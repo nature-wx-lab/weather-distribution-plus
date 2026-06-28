@@ -462,9 +462,9 @@ select {
   gap: 3px;
   min-height: 82px;
   padding: 5px 3px;
-  border-color: #b9dccb;
-  background: #eef8f3;
-  color: #236247;
+  border-color: #c7d1dc;
+  background: #fff;
+  color: #24313d;
   font-size: 11px;
   font-weight: 900;
   line-height: 1.2;
@@ -535,6 +535,9 @@ select {
 }
 
 .observed-layer-buttons button.active {
+  border-color: #b9dccb;
+  background: #eef8f3;
+  color: #236247;
   box-shadow: inset 4px 0 0 #4da477, 0 0 0 2px rgba(77, 164, 119, 0.18);
 }
 
@@ -1621,6 +1624,37 @@ dd {
   color: #738091;
   font-size: 12px;
   font-weight: 800;
+}
+
+.record-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 10px;
+}
+
+.record-list {
+  min-width: 0;
+  border: 1px solid #d5dde5;
+  background: #fff;
+}
+
+.record-list h4 {
+  margin: 0;
+  padding: 8px 10px;
+  border-bottom: 1px solid #d5dde5;
+  background: #f3f6f8;
+  font-size: 14px;
+}
+
+.record-table-wrap { overflow-x: auto; }
+.record-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.record-table th, .record-table td { padding: 6px 7px; border-bottom: 1px solid #e4e9ee; text-align: left; white-space: nowrap; }
+.record-table th { color: #536170; background: #fafbfc; }
+.record-table td small { display: block; color: #687583; font-size: 10px; }
+
+@media (max-width: 760px) {
+  .record-grid { grid-template-columns: 1fr; }
 }
 
 .point-chart-panel {
