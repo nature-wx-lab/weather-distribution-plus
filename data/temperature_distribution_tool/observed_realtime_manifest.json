@@ -1,19 +1,19 @@
 {
   "generator_version": 3,
-  "generated_at": "2026-06-29T12:33:40.976717+09:00",
-  "latest_time": "2026-06-29T12:20:00+09:00",
+  "generated_at": "2026-06-29T12:42:52.942318+09:00",
+  "latest_time": "2026-06-29T12:30:00+09:00",
   "source": "JMA AMeDAS latest_time.txt / data/map/{YYYYMMDDHHMM00}.json 10-minute observations",
   "realtime_layers": {
     "station_observations": {
       "json": "observed_realtime_station_observations.json",
       "csv": "observed_realtime_station_observations.csv",
-      "latest_time": "2026-06-29T12:20:00+09:00",
+      "latest_time": "2026-06-29T12:30:00+09:00",
       "station_count": 1281,
       "elements": {
         "temperature": {
           "field": "temperature_c",
           "unit": "degC",
-          "station_count": 912
+          "station_count": 913
         },
         "precipitation_1h": {
           "field": "precipitation_1h_mm",
@@ -44,7 +44,9 @@
       "target_date": "2026-06-23",
       "target_time": "2026-06-23",
       "status": "available",
-      "source": "daily"
+      "source": "daily",
+      "station_reference": "observed_20260623_min_station_values.json",
+      "station_reference_count": 914
     },
     {
       "id": "20260623_max",
@@ -53,7 +55,9 @@
       "target_date": "2026-06-23",
       "target_time": "2026-06-23",
       "status": "available",
-      "source": "daily"
+      "source": "daily",
+      "station_reference": "observed_20260623_max_station_values.json",
+      "station_reference_count": 914
     },
     {
       "id": "20260624_min",
@@ -62,7 +66,9 @@
       "target_date": "2026-06-24",
       "target_time": "2026-06-24",
       "status": "available",
-      "source": "daily"
+      "source": "daily",
+      "station_reference": "observed_20260624_min_station_values.json",
+      "station_reference_count": 914
     },
     {
       "id": "20260624_max",
@@ -71,7 +77,9 @@
       "target_date": "2026-06-24",
       "target_time": "2026-06-24",
       "status": "available",
-      "source": "daily"
+      "source": "daily",
+      "station_reference": "observed_20260624_max_station_values.json",
+      "station_reference_count": 914
     },
     {
       "id": "20260625_min",
@@ -80,7 +88,9 @@
       "target_date": "2026-06-25",
       "target_time": "2026-06-25",
       "status": "available",
-      "source": "daily"
+      "source": "daily",
+      "station_reference": "observed_20260625_min_station_values.json",
+      "station_reference_count": 914
     },
     {
       "id": "20260625_max",
@@ -89,7 +99,9 @@
       "target_date": "2026-06-25",
       "target_time": "2026-06-25",
       "status": "available",
-      "source": "daily"
+      "source": "daily",
+      "station_reference": "observed_20260625_max_station_values.json",
+      "station_reference_count": 914
     },
     {
       "id": "20260626_min",
@@ -98,7 +110,9 @@
       "target_date": "2026-06-26",
       "target_time": "2026-06-26",
       "status": "available",
-      "source": "daily"
+      "source": "daily",
+      "station_reference": "observed_20260626_min_station_values.json",
+      "station_reference_count": 914
     },
     {
       "id": "20260626_max",
@@ -107,7 +121,9 @@
       "target_date": "2026-06-26",
       "target_time": "2026-06-26",
       "status": "available",
-      "source": "daily"
+      "source": "daily",
+      "station_reference": "observed_20260626_max_station_values.json",
+      "station_reference_count": 914
     },
     {
       "id": "20260627_min",
@@ -116,7 +132,9 @@
       "target_date": "2026-06-27",
       "target_time": "2026-06-27",
       "status": "available",
-      "source": "daily"
+      "source": "daily",
+      "station_reference": "observed_20260627_min_station_values.json",
+      "station_reference_count": 914
     },
     {
       "id": "20260627_max",
@@ -125,7 +143,9 @@
       "target_date": "2026-06-27",
       "target_time": "2026-06-27",
       "status": "available",
-      "source": "daily"
+      "source": "daily",
+      "station_reference": "observed_20260627_max_station_values.json",
+      "station_reference_count": 914
     },
     {
       "id": "20260628_min",
@@ -134,7 +154,9 @@
       "target_date": "2026-06-28",
       "target_time": "2026-06-28",
       "status": "available",
-      "source": "daily"
+      "source": "daily",
+      "station_reference": "observed_20260628_min_station_values.json",
+      "station_reference_count": 914
     },
     {
       "id": "20260628_max",
@@ -143,25 +165,31 @@
       "target_date": "2026-06-28",
       "target_time": "2026-06-28",
       "status": "available",
-      "source": "daily"
+      "source": "daily",
+      "station_reference": "observed_20260628_max_station_values.json",
+      "station_reference_count": 914
     },
     {
       "id": "20260629_min",
       "label": "29日最低",
       "element": "min",
       "target_date": "2026-06-29",
-      "target_time": "2026-06-29T12:20:00+09:00",
+      "target_time": "2026-06-29T12:30:00+09:00",
       "status": "available",
-      "source": "realtime"
+      "source": "realtime",
+      "station_reference": "observed_20260629_min_station_values.json",
+      "station_reference_count": 914
     },
     {
       "id": "20260629_max",
       "label": "29日最高",
       "element": "max",
       "target_date": "2026-06-29",
-      "target_time": "2026-06-29T12:20:00+09:00",
+      "target_time": "2026-06-29T12:30:00+09:00",
       "status": "available",
-      "source": "realtime"
+      "source": "realtime",
+      "station_reference": "observed_20260629_max_station_values.json",
+      "station_reference_count": 915
     }
   ],
   "station_count": 915,
