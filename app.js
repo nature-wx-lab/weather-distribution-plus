@@ -962,11 +962,6 @@ function targetLabelForStamp(slot, dataType) {
   return slot.label || "--";
 }
 
-function observedSlotDisplayLabel(slot) {
-  const label = slot?.label || "--";
-  return slot?.source === "realtime" ? `${label}（更新中）` : label;
-}
-
 function stampElementClass(dataType) {
   if (dataType === "weather") return "is-weather";
   if (dataType === "precipitation") return "is-precipitation";
@@ -2122,7 +2117,7 @@ function syncTimelineFromElement() {
   const slots = state.source === "forecast" ? currentForecastSlots() : state.observedSlots;
   const labels = state.source === "forecast"
     ? slots.map((slot) => slot.label)
-    : state.observedSlots.map(observedSlotDisplayLabel);
+    : state.observedSlots.map((slot) => slot.label);
   const max = Math.max(0, labels.length - 1);
   const currentObservedActive = state.source === "observed" && state.element === "temp";
   const value = state.source === "forecast"
