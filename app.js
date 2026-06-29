@@ -778,7 +778,7 @@ function zoomAt(canvasX, canvasY, factor) {
   ensureView();
   const before = pixelToLonLat(canvasX, canvasY);
   const [beforeX, beforeY] = project(before[0], before[1]);
-  state.view.scale = Math.max(state.minScale || 12, Math.min(900, state.view.scale * factor));
+  state.view.scale = Math.max(state.minScale || 12, Math.min(5000, state.view.scale * factor));
   state.view.centerX = beforeX - (canvasX - els.canvas.width / 2) / state.view.scale;
   state.view.centerY = beforeY + (canvasY - els.canvas.height / 2) / state.view.scale;
   clampView();
@@ -788,7 +788,7 @@ function zoomAt(canvasX, canvasY, factor) {
 function updateZoomControl() {
   if (!els.zoomThumb || !state.view || !state.minScale) return;
   const min = state.minScale;
-  const max = 900;
+  const max = 5000;
   const ratio = Math.max(0, Math.min(1, Math.log(state.view.scale / min) / Math.log(max / min)));
   const top = 92 - ratio * 80;
   els.zoomThumb.style.setProperty("--zoom-thumb-top", `${top}px`);
@@ -962,6 +962,11 @@ function targetLabelForStamp(slot, dataType) {
   return slot.label || "--";
 }
 
+function observedSlotDisplayLabel(slot) {
+  const label = slot?.label || "--";
+  return slot?.source === "realtime" ? `${label}（更新中）` : label;
+}
+
 function stampElementClass(dataType) {
   if (dataType === "weather") return "is-weather";
   if (dataType === "precipitation") return "is-precipitation";
@@ -991,7 +996,8 @@ function updateMapStamp(elementLabel, sourceLabel, dataType) {
       targetText = targetParts ? formatDateTimeJa(targetParts) : "現在";
     } else {
       const timeBand = state.element === "min" ? "明け方" : "日中";
-      targetText = `${observedParts ? formatDateTimeJa(observedParts, { dateOnly: true, noYear: true }) : sourceDate || "--"} ${timeBand}`;
+      const updating = slot?.source === "realtime" ? "（更新中）" : "";
+      targetText = `${observedParts ? formatDateTimeJa(observedParts, { dateOnly: true, noYear: true }) : sourceDate || "--"} ${timeBand}${updating}`;
     }
     }
   }
@@ -1615,7 +1621,7 @@ function drawScaleBar() {
   const [lon0, lat0] = pixelToLonLat(x, y);
   const [lon1, lat1] = pixelToLonLat(x + 160, y);
   const km160 = haversineKm(lon0, lat0, lon1, lat1);
-  const candidates = [50, 100, 200, 300, 500, 800];
+  const candidates = [1, 2, 3, 5, 10, 20, 50, 100, 200, 300, 500, 800];
   const targetKm = candidates.reduce((best, value) => Math.abs(value - km160) < Math.abs(best - km160) ? value : best, candidates[0]);
   const px = Math.max(40, Math.min(240, 160 * targetKm / km160));
   ctx.save();
@@ -2116,7 +2122,7 @@ function syncTimelineFromElement() {
   const slots = state.source === "forecast" ? currentForecastSlots() : state.observedSlots;
   const labels = state.source === "forecast"
     ? slots.map((slot) => slot.label)
-    : state.observedSlots.map((slot) => slot.label);
+    : state.observedSlots.map(observedSlotDisplayLabel);
   const max = Math.max(0, labels.length - 1);
   const currentObservedActive = state.source === "observed" && state.element === "temp";
   const value = state.source === "forecast"
@@ -2326,7 +2332,12 @@ function previousComparisonLabel() {
   if (state.source !== "forecast") return `${baseLabel}実況との比較`;
   const comparisonSource = slot?.previous_comparison_source;
   if (comparisonSource === "forecast") return `${baseLabel}予測との比較`;
-  if (comparisonSource === "observed_realtime") return `${baseLabel}実況（更新中）との比較`;
+  if (comparisonSource === "observed_realtime") {
+    const parts = dateKey(previousDate).split("-");
+    const day = Number(parts[2]);
+    const elementText = state.element === "min" ? "最低気温" : "最高気温";
+    return `${day}日実況${elementText}（推定値）との比較`;
+  }
   if (comparisonSource === "observed_daily") return `${baseLabel}実況との比較`;
   return `${baseLabel}との比較`;
 }
