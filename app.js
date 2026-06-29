@@ -6,6 +6,9 @@ const TEMPERATURE_EXTREMES_URL = `${DATA_ROOT}/temperature_extremes.json`;
 const FORECAST_MANIFEST_POLL_MS = 10 * 60 * 1000;
 const OBSERVED_DATA_POLL_MS = 10 * 60 * 1000;
 const SUIKEI_MANIFEST_URL = `${DATA_ROOT}/suikei_realtime_manifest.json`;
+const SUIKEI_TILE_CACHE_LIMIT = 240;
+const SUIKEI_TIMELINE_DEBOUNCE_MS = 140;
+let suikeiTimelineLoadTimer = null;
 const MAX_INTERPOLATION_ELEVATION_M = 1500;
 const MAJOR_PLACE_NAMES = new Set([
   "稚内", "旭川", "札幌", "釧路", "青森", "盛岡", "秋田", "仙台", "山形", "福島",
@@ -1859,6 +1862,15 @@ function suikeiTileUrl(template, z, x, y) {
   return `${DATA_ROOT}/${template.replace("{z}", z).replace("{x}", x).replace("{y}", y)}`;
 }
 
+function trimSuikeiTileCache() {
+  if (state.suikeiTileCache.size <= SUIKEI_TILE_CACHE_LIMIT) return;
+  for (const [url, entry] of state.suikeiTileCache) {
+    if (state.suikeiTileCache.size <= SUIKEI_TILE_CACHE_LIMIT) break;
+    if (entry.status === "loading") continue;
+    state.suikeiTileCache.delete(url);
+  }
+}
+
 function drawSuikeiTiles() {
   if (state.source !== "observed" || !isSuikeiObservedLayer()) return;
   const layerKey = state.observedLayer === "temp" ? "temperature" : state.observedLayer;
@@ -1880,23 +1892,34 @@ function drawSuikeiTiles() {
   ctx.save();
   ctx.imageSmoothingEnabled = false;
   for (let x = xMin; x <= xMax; x += 1) for (let y = yMin; y <= yMax; y += 1) {
+    const [x0, y0] = lonLatToPixel(tileLon(x, coordinateZoom), tileLat(y, coordinateZoom));
+    const [x1, y1] = lonLatToPixel(tileLon(x + 1, coordinateZoom), tileLat(y + 1, coordinateZoom));
+    const left = Math.min(x0, x1);
+    const top = Math.min(y0, y1);
+    const width = Math.abs(x1 - x0) + 1;
+    const height = Math.abs(y1 - y0) + 1;
+    // Load only the viewport and one surrounding tile. Previously every draw
+    // requested all 169 nationwide tiles even after zooming into one region.
+    if (left > els.canvas.width + width || left + width < -width || top > els.canvas.height + height || top + height < -height) continue;
     const url = suikeiTileUrl(layer.tile_template, z, x, y);
     let entry = state.suikeiTileCache.get(url);
     if (!entry) {
       const image = new Image();
       entry = { image, status: "loading" };
       state.suikeiTileCache.set(url, entry);
-      image.onload = () => { entry.status = "loaded"; draw(); };
-      image.onerror = () => { entry.status = "missing"; draw(); };
+      trimSuikeiTileCache();
+      image.onload = () => { entry.status = "loaded"; trimSuikeiTileCache(); draw(); };
+      image.onerror = () => { entry.status = "missing"; trimSuikeiTileCache(); draw(); };
       image.src = url;
+    } else {
+      state.suikeiTileCache.delete(url);
+      state.suikeiTileCache.set(url, entry);
     }
     if (entry.status === "loading") loading += 1;
     if (entry.status === "missing") missing += 1;
     if (entry.status !== "loaded") continue;
     loaded += 1;
-    const [x0, y0] = lonLatToPixel(tileLon(x, coordinateZoom), tileLat(y, coordinateZoom));
-    const [x1, y1] = lonLatToPixel(tileLon(x + 1, coordinateZoom), tileLat(y + 1, coordinateZoom));
-    ctx.drawImage(entry.image, Math.min(x0, x1), Math.min(y0, y1), Math.abs(x1 - x0) + 1, Math.abs(y1 - y0) + 1);
+    ctx.drawImage(entry.image, left, top, width, height);
   }
   ctx.restore();
   if (loading && !loaded) {
@@ -3557,12 +3580,24 @@ els.forecastLayerButtons.addEventListener("click", (event) => {
 });
 
 els.timelineRange.addEventListener("input", () => {
+  if (state.source === "observed" && isSuikeiObservedLayer()) {
+    state.suikeiSlotIndex = Math.max(0, Math.min(Number(els.timelineRange.value), suikeiSlots().length - 1));
+    syncTimelineFromElement();
+    clearTimeout(suikeiTimelineLoadTimer);
+    suikeiTimelineLoadTimer = setTimeout(() => {
+      suikeiTimelineLoadTimer = null;
+      loadData();
+    }, SUIKEI_TIMELINE_DEBOUNCE_MS);
+    return;
+  }
   setElementFromTimeline(els.timelineRange.value);
 });
 
 els.timelineBottom.addEventListener("click", (event) => {
   const button = event.target.closest("[data-timeline-index]");
   if (!button) return;
+  clearTimeout(suikeiTimelineLoadTimer);
+  suikeiTimelineLoadTimer = null;
   setElementFromTimeline(button.dataset.timelineIndex);
 });
 
