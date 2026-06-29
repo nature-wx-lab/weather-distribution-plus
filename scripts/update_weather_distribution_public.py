@@ -63,6 +63,7 @@ def prune_unreferenced_data() -> None:
     for slot_id in keep_slots:
         for suffix in periods:
             keep_observed.add(f"observed_{slot_id}_anomaly_{suffix}.csv")
+        keep_observed.add(f"observed_{slot_id}_station_values.json")
     for element in ["min", "max"]:
         for suffix in periods:
             keep_observed.add(f"observed_{element}_anomaly_{suffix}.csv")
@@ -70,6 +71,10 @@ def prune_unreferenced_data() -> None:
     for path in DATA_DIR.glob("observed_*.csv"):
         match = dated.match(path.name)
         if path.name not in keep_observed and (match or path.name.startswith(("observed_temp_", "observed_min_", "observed_max_"))):
+            path.unlink()
+            removed += 1
+    for path in DATA_DIR.glob("observed_*_station_values.json"):
+        if path.name not in keep_observed:
             path.unlink()
             removed += 1
     print(f"pruned unreferenced public data files: {removed}")
@@ -92,19 +97,19 @@ def main() -> None:
 
     run([
         py,
-        "scripts/update_temperature_distribution_forecast.py",
-        "--index", str(STATION_INDEX),
-        "--station-dir", str(STATION_DIR),
-        "--out-dir", str(DATA_DIR),
-    ])
-    run([
-        py,
         "scripts/update_temperature_distribution_realtime_observations.py",
         "--index", str(STATION_INDEX),
         "--station-dir", str(STATION_DIR),
         "--out-dir", str(DATA_DIR),
         "--station-inventory", str(STATION_INVENTORY),
         "--days", "7",
+    ])
+    run([
+        py,
+        "scripts/update_temperature_distribution_forecast.py",
+        "--index", str(STATION_INDEX),
+        "--station-dir", str(STATION_DIR),
+        "--out-dir", str(DATA_DIR),
     ])
     run([
         py,

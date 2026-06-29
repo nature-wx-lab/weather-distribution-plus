@@ -1876,6 +1876,8 @@ function drawSuikeiTiles() {
   const yMin = Math.max(0, latToY(bounds[3]));
   const yMax = Math.min(n - 1, latToY(bounds[1]));
   let loaded = 0, loading = 0, missing = 0;
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
   for (let x = xMin; x <= xMax; x += 1) for (let y = yMin; y <= yMax; y += 1) {
     const url = suikeiTileUrl(layer.tile_template, z, x, y);
     let entry = state.suikeiTileCache.get(url);
@@ -1895,6 +1897,7 @@ function drawSuikeiTiles() {
     const [x1, y1] = lonLatToPixel(tileLon(x + 1, coordinateZoom), tileLat(y + 1, coordinateZoom));
     ctx.drawImage(entry.image, Math.min(x0, x1), Math.min(y0, y1), Math.abs(x1 - x0) + 1, Math.abs(y1 - y0) + 1);
   }
+  ctx.restore();
   if (loading && !loaded) {
     els.dataNotice.hidden = false;
     els.dataNotice.textContent = "推計気象分布を読み込み中です。";
@@ -2319,7 +2322,13 @@ function previousComparisonLabel() {
   const targetDate = pointDate || slot?.target_date;
   const previousDate = addDaysToDateKey(targetDate, -1);
   if (!previousDate) return "";
-  return `${shortDayElementLabel(previousDate, state.element)}との比較`;
+  const baseLabel = shortDayElementLabel(previousDate, state.element);
+  if (state.source !== "forecast") return `${baseLabel}実況との比較`;
+  const comparisonSource = slot?.previous_comparison_source;
+  if (comparisonSource === "forecast") return `${baseLabel}予測との比較`;
+  if (comparisonSource === "observed_realtime") return `${baseLabel}実況（更新中）との比較`;
+  if (comparisonSource === "observed_daily") return `${baseLabel}実況との比較`;
+  return `${baseLabel}との比較`;
 }
 
 function averageComparisonLabel() {

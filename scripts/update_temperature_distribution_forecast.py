@@ -181,6 +181,39 @@ def load_previous_forecast_grid(
     return np.array(values)
 
 
+def should_use_previous_forecast(slot_id: str, previous_slot: dict[str, object] | None) -> bool:
+    return bool(
+        slot_id.startswith("tomorrow_")
+        and previous_slot
+        and previous_slot.get("status") == "available"
+    )
+
+
+def load_observed_station_reference(
+    out_dir: Path,
+    target_date,
+    element: str,
+) -> list[StationNormal]:
+    path = out_dir / f"observed_{target_date.strftime('%Y%m%d')}_{element}_station_values.json"
+    if not path.exists():
+        return []
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if payload.get("target_date") != target_date.isoformat() or payload.get("element") != element:
+        return []
+    return [
+        StationNormal(
+            station_key=str(row.get("station_key", "")),
+            name=str(row.get("name", "")),
+            region=str(row.get("region", "")),
+            lon=float(row["longitude"]),
+            lat=float(row["latitude"]),
+            normal_c=float(row["value_c"]),
+        )
+        for row in payload.get("stations", [])
+        if row.get("longitude") is not None and row.get("latitude") is not None and row.get("value_c") is not None
+    ]
+
+
 def make_slot(slot_id: str, label: str, element: str, target_date, target: dict[str, str] | None, now: datetime, out_dir: Path) -> dict[str, object]:
     past = is_past_slot(slot_id, now)
     if target is None:
@@ -213,13 +246,19 @@ def make_slot(slot_id: str, label: str, element: str, target_date, target: dict[
     }
 
 
-def write_forecast_points(slot: dict[str, object], forecast_points: list[tuple[float, float, float]], validtime: str, args: argparse.Namespace) -> None:
+def write_forecast_points(
+    slot: dict[str, object],
+    forecast_points: list[tuple[float, float, float]],
+    validtime: str,
+    args: argparse.Namespace,
+    use_previous_forecast: bool = False,
+) -> None:
     index = load_index(args.index)
     observed_latest = datetime.strptime(index["current_year"]["latest_date"], "%Y-%m-%d").date()
     target_date = parse_jma_time(validtime).date()
     previous_date = target_date - timedelta(days=1)
     previous_forecast_grid = None
-    if str(slot["id"]).startswith("tomorrow_"):
+    if use_previous_forecast:
         previous_forecast_grid = load_previous_forecast_grid(
             args.out_dir,
             f"today_{slot['element']}",
@@ -231,21 +270,31 @@ def write_forecast_points(slot: dict[str, object], forecast_points: list[tuple[f
         previous_diff_grid = np.array([point[2] for point in forecast_points]) - previous_grid
         slot["previous_comparison_source"] = "forecast"
     elif previous_date <= observed_latest:
-        previous_station_values = load_station_values(args.index, args.station_dir, str(slot["element"]), previous_date)
+        previous_station_values = load_observed_station_reference(
+            args.out_dir, previous_date, str(slot["element"])
+        ) or load_station_values(args.index, args.station_dir, str(slot["element"]), previous_date)
         previous_differences = station_difference_values(forecast_points, previous_station_values)
         previous_diff_grid = idw_values(forecast_points, previous_differences)
         previous_grid = np.array([point[2] for point in forecast_points]) - previous_diff_grid
         slot["previous_comparison_source"] = "observed_daily"
     else:
-        previous_path = args.out_dir / f"observed_{previous_date.strftime('%Y%m%d')}_{slot['element']}_anomaly_30y.csv"
-        if not previous_path.exists():
-            previous_path = args.out_dir / f"observed_{slot['element']}_anomaly_30y.csv"
-        previous_values = []
-        with previous_path.open("r", encoding="utf-8-sig", newline="") as handle:
-            for row in csv.DictReader(handle):
-                previous_values.append(float(row["observed_c"]))
-        previous_grid = np.array(previous_values)
-        previous_diff_grid = np.array([point[2] for point in forecast_points]) - previous_grid
+        realtime_station_values = load_observed_station_reference(
+            args.out_dir, previous_date, str(slot["element"])
+        )
+        if realtime_station_values:
+            previous_differences = station_difference_values(forecast_points, realtime_station_values)
+            previous_diff_grid = idw_values(forecast_points, previous_differences)
+            previous_grid = np.array([point[2] for point in forecast_points]) - previous_diff_grid
+        else:
+            previous_path = args.out_dir / f"observed_{previous_date.strftime('%Y%m%d')}_{slot['element']}_anomaly_30y.csv"
+            if not previous_path.exists():
+                previous_path = args.out_dir / f"observed_{slot['element']}_anomaly_30y.csv"
+            previous_values = []
+            with previous_path.open("r", encoding="utf-8-sig", newline="") as handle:
+                for row in csv.DictReader(handle):
+                    previous_values.append(float(row["observed_c"]))
+            previous_grid = np.array(previous_values)
+            previous_diff_grid = np.array([point[2] for point in forecast_points]) - previous_grid
         slot["previous_comparison_source"] = "observed_realtime"
     slot["previous_comparison_date"] = previous_date.isoformat()
 
@@ -284,13 +333,18 @@ def write_forecast_points(slot: dict[str, object], forecast_points: list[tuple[f
         write_csv(args.out_dir / f"forecast_{slot['id']}_anomaly_{period_suffix(period)}.csv", anomaly_rows)
 
 
-def write_forecast_slot(slot: dict[str, object], target: dict[str, str], args: argparse.Namespace) -> None:
+def write_forecast_slot(
+    slot: dict[str, object],
+    target: dict[str, str],
+    args: argparse.Namespace,
+    use_previous_forecast: bool = False,
+) -> None:
     forecast_url = WDIST_GEOJSON_URL.format(**target)
     forecast_payload = fetch_json_fresh(forecast_url)
     forecast_points = load_forecast_points(forecast_payload)
     if not forecast_points:
         raise RuntimeError(f"No forecast grid points found: {forecast_url}")
-    write_forecast_points(slot, forecast_points, target["validtime"], args)
+    write_forecast_points(slot, forecast_points, target["validtime"], args, use_previous_forecast)
 
 
 def write_cached_raw_slot(slot: dict[str, object], target_date, args: argparse.Namespace) -> bool:
@@ -508,7 +562,16 @@ def refresh(args: argparse.Namespace) -> None:
         slot = make_slot(slot_id, label, element, target_date, target, now, args.out_dir)
         slots.append(slot)
         if target is not None:
-            write_forecast_slot(slot, target, args)
+            previous_slot = next(
+                (
+                    candidate for candidate in reversed(slots[:-1])
+                    if candidate.get("element") == element
+                    and candidate.get("target_date") == (target_date - timedelta(days=1)).isoformat()
+                ),
+                None,
+            )
+            use_previous_forecast = should_use_previous_forecast(slot_id, previous_slot)
+            write_forecast_slot(slot, target, args, use_previous_forecast)
             print(f"wrote {slot_id} {label}")
         elif slot["status"] == "stale" and write_cached_raw_slot(slot, target_date, args):
             print(f"wrote cached {slot_id} {label}")

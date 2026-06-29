@@ -481,6 +481,37 @@ def period_suffix(period: str) -> str:
     return "normal" if period == "normal" else f"{period}y"
 
 
+def station_reference_path(out_dir: Path, slot_id: str) -> Path:
+    return out_dir / f"observed_{slot_id}_station_values.json"
+
+
+def write_station_reference(
+    path: Path,
+    values: list[RealtimeStationValue],
+    target_date,
+    element: str,
+    source: str,
+) -> None:
+    payload = {
+        "target_date": target_date.isoformat(),
+        "element": element,
+        "source": source,
+        "station_count": len(values),
+        "stations": [
+            {
+                "station_key": value.station_key,
+                "name": value.name,
+                "region": value.region,
+                "longitude": value.lon,
+                "latitude": value.lat,
+                "value_c": value.normal_c,
+            }
+            for value in values
+        ],
+    }
+    path.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+
+
 def observed_slot_files_exist(out_dir: Path, slot_id: str) -> bool:
     return all(
         (out_dir / f"observed_{slot_id}_anomaly_{period_suffix(period)}.csv").exists()
@@ -624,7 +655,10 @@ def build(args: argparse.Namespace) -> None:
                 and can_reuse_corrected_daily
                 and existing_sources.get(slot_id) == "daily"
                 and observed_slot_files_exist(args.out_dir, slot_id)
+                and station_reference_path(args.out_dir, slot_id).exists()
             ):
+                reference_path = station_reference_path(args.out_dir, slot_id)
+                reference_payload = json.loads(reference_path.read_text(encoding="utf-8"))
                 slots.append({
                     "id": slot_id,
                     "label": short_slot_label(target_date, element),
@@ -633,16 +667,20 @@ def build(args: argparse.Namespace) -> None:
                     "target_time": target_date.isoformat(),
                     "status": "available",
                     "source": "daily",
+                    "station_reference": reference_path.name,
+                    "station_reference_count": int(reference_payload.get("station_count") or 0),
                 })
                 continue
             skip_write = False
             official_normal_average_grid = None
+            station_reference_values: list[RealtimeStationValue] = []
             try:
                 official = fetch_daily_station_values(target_date, element, station_inventory)
             except Exception as exc:
                 print(f"warning: failed to fetch JMA MDRR all-station table for {slot_id}: {exc}")
                 official = {"value": [], "anomaly": [], "previous": []}
             if official["value"]:
+                station_reference_values = official["value"]
                 official_station_count = max(official_station_count, len(official["value"]))
                 grid = idw_values(grid_points, official["value"])
                 if official["anomaly"]:
@@ -655,6 +693,7 @@ def build(args: argparse.Namespace) -> None:
                     previous_grid = realtime_previous_grids.get(element) if target_date == latest_date else None
                 source = "realtime" if target_date == latest_date else "daily"
             elif target_date == latest_date:
+                station_reference_values = make_station_values(records, element)
                 grid = value_grids[element]
                 previous_grid = realtime_previous_grids.get(element)
                 source = "realtime"
@@ -662,6 +701,7 @@ def build(args: argparse.Namespace) -> None:
                 station_values = load_daily_station_values(args.index, args.station_dir, element, target_date)
                 if not station_values:
                     continue
+                station_reference_values = station_values
                 previous_values = load_daily_station_values(args.index, args.station_dir, element, target_date - timedelta(days=1))
                 grid = idw_values(grid_points, station_values)
                 if previous_values:
@@ -678,6 +718,14 @@ def build(args: argparse.Namespace) -> None:
             else:
                 continue
             if not skip_write:
+                if station_reference_values:
+                    write_station_reference(
+                        station_reference_path(args.out_dir, slot_id),
+                        station_reference_values,
+                        target_date,
+                        element,
+                        source,
+                    )
                 write_observed_grid_set(
                     args=args,
                     grid_points_2d=grid_points_2d,
@@ -714,6 +762,9 @@ def build(args: argparse.Namespace) -> None:
                     "target_time": target_label,
                     "status": "available",
                     "source": source,
+                    "station_reference": station_reference_path(args.out_dir, slot_id).name
+                    if station_reference_path(args.out_dir, slot_id).exists() else "",
+                    "station_reference_count": len(station_reference_values),
                 }
             )
 
