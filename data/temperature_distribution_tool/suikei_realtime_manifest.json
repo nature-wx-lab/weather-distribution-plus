@@ -1,10 +1,10 @@
 {
   "schema_version": 2,
-  "generated_at": "2026-06-29T13:26:42.846321Z",
+  "generated_at": "2026-06-29T14:37:01.767519Z",
   "source": "JMA estimated weather distribution (推計気象分布)",
   "source_target_times": "https://www.jma.go.jp/bosai/jmatile/data/suikeikishou/targetTimes.json",
-  "basetime": "20260629130000",
-  "validtime": "20260629130000",
+  "basetime": "20260629140000",
+  "validtime": "20260629140000",
   "slot_count": 48,
   "tile_size": 512,
   "available_zooms": [
@@ -24,54 +24,30 @@
   "layers": {
     "temperature": {
       "source_element": "temp",
-      "tile_template": "suikei_tiles/20260629130000/temperature/{z}/{x}/{y}.png",
+      "tile_template": "suikei_tiles/20260629140000/temperature/{z}/{x}/{y}.png",
       "tile_count": 169,
       "visible_tile_count": 40
     },
     "weather": {
       "source_element": "wthr",
-      "tile_template": "suikei_tiles/20260629130000/weather/{z}/{x}/{y}.png",
+      "tile_template": "suikei_tiles/20260629140000/weather/{z}/{x}/{y}.png",
       "tile_count": 169,
       "visible_tile_count": 40
     },
     "sunshine": {
       "source_element": "suns1h",
-      "tile_template": "suikei_tiles/20260629130000/sunshine/{z}/{x}/{y}.png",
+      "tile_template": "suikei_tiles/20260629140000/sunshine/{z}/{x}/{y}.png",
       "tile_count": 169,
       "visible_tile_count": 40
     }
   },
   "temperature_labels": {
     "file": "suikei_temperature_labels.json",
-    "validtime": "20260629130000",
+    "validtime": "20260629140000",
     "label_count": 5914,
     "precision_c": 0.5
   },
   "slots": [
-    {
-      "basetime": "20260627140000",
-      "validtime": "20260627140000",
-      "layers": {
-        "temperature": {
-          "source_element": "temp",
-          "tile_template": "suikei_tiles/20260627140000/temperature/{z}/{x}/{y}.png",
-          "tile_count": 169,
-          "visible_tile_count": 40
-        },
-        "weather": {
-          "source_element": "wthr",
-          "tile_template": "suikei_tiles/20260627140000/weather/{z}/{x}/{y}.png",
-          "tile_count": 169,
-          "visible_tile_count": 40
-        },
-        "sunshine": {
-          "source_element": "suns1h",
-          "tile_template": "suikei_tiles/20260627140000/sunshine/{z}/{x}/{y}.png",
-          "tile_count": 169,
-          "visible_tile_count": 40
-        }
-      }
-    },
     {
       "basetime": "20260627150000",
       "validtime": "20260627150000",
@@ -1195,6 +1171,30 @@
         "sunshine": {
           "source_element": "suns1h",
           "tile_template": "suikei_tiles/20260629130000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40
+        }
+      }
+    },
+    {
+      "basetime": "20260629140000",
+      "validtime": "20260629140000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20260629140000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20260629140000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20260629140000/sunshine/{z}/{x}/{y}.png",
           "tile_count": 169,
           "visible_tile_count": 40
         }
