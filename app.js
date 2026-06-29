@@ -3661,6 +3661,21 @@ els.timelineNextButton.addEventListener("click", () => {
   setElementFromTimeline(nextValue);
 });
 
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+  if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+  const target = event.target;
+  if (target instanceof HTMLElement && (target.isContentEditable || target.matches("input, select, textarea"))) return;
+  const timeline = document.querySelector(".map-timeline");
+  if (!timeline || timeline.hidden || els.timelineRange.disabled) return;
+  const delta = event.key === "ArrowLeft" ? -1 : 1;
+  const current = Number(els.timelineRange.value);
+  const nextValue = Math.max(Number(els.timelineRange.min), Math.min(Number(els.timelineRange.max), current + delta));
+  if (nextValue === current) return;
+  event.preventDefault();
+  setElementFromTimeline(nextValue);
+});
+
 els.modeSelect.addEventListener("change", () => {
   state.mode = els.modeSelect.value;
   updateControlAvailability();
