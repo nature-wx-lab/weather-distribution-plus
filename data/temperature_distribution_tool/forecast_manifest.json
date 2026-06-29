@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-29T23:52:57+09:00",
+  "generated_at": "2026-06-30T00:03:04+09:00",
   "source": "JMA天気分布予報 targetTimes.json / *_temp_point / wm / r3 / s3 GeoJSON / VPFD地域時系列予報",
   "service_date": "2026-06-29",
   "daily_rollover_hour_jst": 6,
@@ -30,7 +30,7 @@
       "validtime": "20260630000000",
       "status": "available",
       "message": "",
-      "previous_comparison_source": "observed_realtime",
+      "previous_comparison_source": "observed_daily",
       "previous_comparison_date": "2026-06-29"
     },
     {
@@ -42,7 +42,7 @@
       "validtime": "20260630090000",
       "status": "available",
       "message": "",
-      "previous_comparison_source": "observed_realtime",
+      "previous_comparison_source": "observed_daily",
       "previous_comparison_date": "2026-06-29"
     }
   ],
@@ -80,7 +80,7 @@
           "validtime": "20260630000000",
           "status": "available",
           "message": "",
-          "previous_comparison_source": "observed_realtime",
+          "previous_comparison_source": "observed_daily",
           "previous_comparison_date": "2026-06-29"
         },
         {
@@ -92,7 +92,7 @@
           "validtime": "20260630090000",
           "status": "available",
           "message": "",
-          "previous_comparison_source": "observed_realtime",
+          "previous_comparison_source": "observed_daily",
           "previous_comparison_date": "2026-06-29"
         }
       ]
@@ -128,8 +128,8 @@
           "target_date": "2026-06-30",
           "basetime": "20260629080000",
           "validtime": "20260629150000",
-          "status": "available",
-          "message": ""
+          "status": "stale",
+          "message": "予測対象時刻を過ぎています。必要に応じて実況も確認してください。"
         },
         {
           "id": "temp3h_20260629180000",
@@ -236,8 +236,8 @@
           "basetime": "20260629080000",
           "validtime": "20260629150000",
           "interval_label": "6月29日21時〜30日00時",
-          "status": "available",
-          "message": ""
+          "status": "stale",
+          "message": "予測対象時刻を過ぎています。必要に応じて実況も確認してください。"
         },
         {
           "id": "weather3h_20260629180000",
@@ -352,8 +352,8 @@
           "basetime": "20260629080000",
           "validtime": "20260629150000",
           "interval_label": "6月29日21時〜30日00時",
-          "status": "available",
-          "message": ""
+          "status": "stale",
+          "message": "予測対象時刻を過ぎています。必要に応じて実況も確認してください。"
         },
         {
           "id": "precip3h_20260629180000",
@@ -468,8 +468,8 @@
           "basetime": "20260629080000",
           "validtime": "20260629150000",
           "interval_label": "6月29日21時〜30日00時",
-          "status": "available",
-          "message": ""
+          "status": "stale",
+          "message": "予測対象時刻を過ぎています。必要に応じて実況も確認してください。"
         },
         {
           "id": "snow3h_20260629180000",
