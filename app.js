@@ -8,6 +8,7 @@ const OBSERVED_DATA_POLL_MS = 10 * 60 * 1000;
 const SUIKEI_MANIFEST_URL = `${DATA_ROOT}/suikei_realtime_manifest.json`;
 const SUIKEI_TILE_CACHE_LIMIT = 240;
 const SUIKEI_TIMELINE_DEBOUNCE_MS = 140;
+const SUIKEI_OVERVIEW_MAX_ZOOM_RATIO = 2.2;
 let suikeiTimelineLoadTimer = null;
 const MAX_INTERPOLATION_ELEVATION_M = 1500;
 const MAJOR_PLACE_NAMES = new Set([
@@ -1871,11 +1872,69 @@ function trimSuikeiTileCache() {
   }
 }
 
+function updateSuikeiLoadingNotice(loaded, loading, missing) {
+  if (loading && !loaded) {
+    els.dataNotice.hidden = false;
+    els.dataNotice.textContent = "推計気象分布を読み込み中です。";
+  } else if (missing && !loaded) {
+    els.dataNotice.hidden = false;
+    els.dataNotice.textContent = "この時刻の推計気象分布タイルがありません。";
+  } else if (loaded) {
+    els.dataNotice.hidden = true;
+    els.dataNotice.textContent = "";
+  }
+}
+
+function prefetchAdjacentSuikeiOverviews(layerKey) {
+  const slots = suikeiSlots();
+  const index = Number(state.suikeiSlotIndex);
+  for (const offset of [-2, -1, 1, 2]) {
+    const layer = slots[index + offset]?.layers?.[layerKey];
+    if (!layer?.overview_file) continue;
+    const url = `${DATA_ROOT}/${layer.overview_file}`;
+    if (state.suikeiTileCache.has(url)) continue;
+    const image = new Image();
+    const entry = { image, status: "loading" };
+    state.suikeiTileCache.set(url, entry);
+    image.onload = () => { entry.status = "loaded"; trimSuikeiTileCache(); };
+    image.onerror = () => { entry.status = "missing"; trimSuikeiTileCache(); };
+    image.src = url;
+  }
+}
+
+function drawSuikeiOverview(layer, layerKey) {
+  const bounds = layer.overview_bounds;
+  if (!layer.overview_file || !Array.isArray(bounds) || bounds.length !== 4) return false;
+  const url = `${DATA_ROOT}/${layer.overview_file}`;
+  let entry = state.suikeiTileCache.get(url);
+  if (!entry) {
+    const image = new Image();
+    entry = { image, status: "loading" };
+    state.suikeiTileCache.set(url, entry);
+    image.onload = () => { entry.status = "loaded"; trimSuikeiTileCache(); prefetchAdjacentSuikeiOverviews(layerKey); draw(); };
+    image.onerror = () => { entry.status = "missing"; trimSuikeiTileCache(); draw(); };
+    image.src = url;
+  }
+  if (entry.status === "loaded") {
+    prefetchAdjacentSuikeiOverviews(layerKey);
+    const [x0, y0] = lonLatToPixel(Number(bounds[0]), Number(bounds[3]));
+    const [x1, y1] = lonLatToPixel(Number(bounds[2]), Number(bounds[1]));
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(entry.image, Math.min(x0, x1), Math.min(y0, y1), Math.abs(x1 - x0) + 1, Math.abs(y1 - y0) + 1);
+    ctx.restore();
+  }
+  updateSuikeiLoadingNotice(entry.status === "loaded" ? 1 : 0, entry.status === "loading" ? 1 : 0, entry.status === "missing" ? 1 : 0);
+  return true;
+}
+
 function drawSuikeiTiles() {
   if (state.source !== "observed" || !isSuikeiObservedLayer()) return;
   const layerKey = state.observedLayer === "temp" ? "temperature" : state.observedLayer;
   const layer = currentSuikeiSlot()?.layers?.[layerKey];
   if (!layer?.tile_template || state.suikeiManifest?.availability === false) return;
+  const zoomRatio = state.view?.scale / (state.minScale || state.view?.scale || 1);
+  if (zoomRatio <= SUIKEI_OVERVIEW_MAX_ZOOM_RATIO && drawSuikeiOverview(layer, layerKey)) return;
   const z = Number(layer.native_zoom ?? state.suikeiManifest.native_zoom ?? 8);
   const coordinateZoom = z - 1; // JMA uses 512 px tiles, so x/y follow the preceding XYZ zoom.
   const boundsValue = layer.bounds || state.suikeiManifest.bounds || [122, 20, 150, 48];
@@ -1922,16 +1981,7 @@ function drawSuikeiTiles() {
     ctx.drawImage(entry.image, left, top, width, height);
   }
   ctx.restore();
-  if (loading && !loaded) {
-    els.dataNotice.hidden = false;
-    els.dataNotice.textContent = "推計気象分布を読み込み中です。";
-  } else if (missing && !loaded) {
-    els.dataNotice.hidden = false;
-    els.dataNotice.textContent = "この時刻の推計気象分布タイルがありません。";
-  } else if (loaded) {
-    els.dataNotice.hidden = true;
-    els.dataNotice.textContent = "";
-  }
+  updateSuikeiLoadingNotice(loaded, loading, missing);
 }
 
 function drawValueLabel(text, x, y) {

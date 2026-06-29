@@ -41,6 +41,7 @@ ELEMENTS = {"temperature": "temp", "weather": "wthr", "sunshine": "suns1h"}
 # The official data extent. A tighter Japan extent would omit remote islands.
 DATA_BOUNDS = (118.0, 20.0, 150.0, 48.0)  # west, south, east, north
 LABEL_ZOOM = 10
+OVERVIEW_TILE_SIZE = 128
 
 
 def fetch(url: str, timeout: int = 30, attempts: int = 3) -> bytes:
@@ -80,6 +81,69 @@ def tile_coordinates(zoom: int) -> list[tuple[int, int, int]]:
         for x in range(lon_to_x(west, coordinate_zoom), lon_to_x(east, coordinate_zoom) + 1)
         for y in range(lat_to_y(north, coordinate_zoom), lat_to_y(south, coordinate_zoom) + 1)
     ]
+
+
+def tile_x_to_lon(x: int, zoom: int) -> float:
+    return x / (1 << zoom) * 360.0 - 180.0
+
+
+def tile_y_to_lat(y: int, zoom: int) -> float:
+    n = math.pi - 2.0 * math.pi * y / (1 << zoom)
+    return math.degrees(math.atan(math.sinh(n)))
+
+
+def overview_is_intact(out_dir: Path, slot: dict) -> bool:
+    for layer in (slot.get("layers") or {}).values():
+        overview = layer.get("overview_file")
+        if not overview or not (out_dir / overview).is_file():
+            return False
+    return True
+
+
+def ensure_slot_overviews(out_dir: Path, slot: dict, zoom: int) -> dict:
+    """Build one screen-sized PNG per layer for near-instant nationwide display."""
+    validtime = str(slot["validtime"])
+    coords = tile_coordinates(zoom)
+    coordinate_zoom = zoom - 1
+    xs = sorted({x for _, x, _ in coords})
+    ys = sorted({y for _, _, y in coords})
+    x_index = {value: index for index, value in enumerate(xs)}
+    y_index = {value: index for index, value in enumerate(ys)}
+    overview_root = out_dir / "suikei_overviews" / validtime
+    overview_root.mkdir(parents=True, exist_ok=True)
+    bounds = [
+        tile_x_to_lon(xs[0], coordinate_zoom),
+        tile_y_to_lat(ys[-1] + 1, coordinate_zoom),
+        tile_x_to_lon(xs[-1] + 1, coordinate_zoom),
+        tile_y_to_lat(ys[0], coordinate_zoom),
+    ]
+    for key, layer in (slot.get("layers") or {}).items():
+        destination = overview_root / f"{key}.png"
+        if not destination.is_file():
+            mosaic = Image.new(
+                "RGBA",
+                (len(xs) * OVERVIEW_TILE_SIZE, len(ys) * OVERVIEW_TILE_SIZE),
+                (0, 0, 0, 0),
+            )
+            for _, x, y in coords:
+                source = out_dir / "suikei_tiles" / validtime / key / str(zoom) / str(x) / f"{y}.png"
+                if not source.is_file():
+                    continue
+                with Image.open(source) as tile:
+                    reduced = tile.convert("RGBA").resize(
+                        (OVERVIEW_TILE_SIZE, OVERVIEW_TILE_SIZE),
+                        Image.Resampling.NEAREST,
+                    )
+                    mosaic.paste(reduced, (x_index[x] * OVERVIEW_TILE_SIZE, y_index[y] * OVERVIEW_TILE_SIZE))
+            temporary = destination.with_suffix(".png.tmp")
+            mosaic.save(temporary, format="PNG", optimize=True, compress_level=9)
+            temporary.replace(destination)
+        layer["overview_file"] = f"suikei_overviews/{validtime}/{key}.png"
+        layer["overview_bounds"] = [round(value, 8) for value in bounds]
+        layer["overview_width"] = len(xs) * OVERVIEW_TILE_SIZE
+        layer["overview_height"] = len(ys) * OVERVIEW_TILE_SIZE
+        layer["overview_source_zoom"] = zoom
+    return slot
 
 
 def amedas_label_tiles() -> list[tuple[int, int]]:
@@ -199,6 +263,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--keep-slots", type=int, default=48)
+    parser.add_argument("--overview-only", action="store_true", help="build overview PNGs from mirrored tiles without network access")
     return parser.parse_args()
 
 
@@ -349,6 +414,23 @@ def main() -> None:
     if args.keep_slots < 1:
         raise SystemExit("--keep-slots must be at least 1")
 
+    if args.overview_only:
+        manifest_path = args.out_dir / "suikei_realtime_manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        slots = manifest.get("slots") or []
+        if not slots:
+            raise RuntimeError("existing manifest has no slots")
+        for slot in slots:
+            ensure_slot_overviews(args.out_dir, slot, max(zooms))
+        manifest["schema_version"] = 3
+        manifest["generated_at"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        manifest["layers"] = slots[-1]["layers"]
+        temporary_manifest = manifest_path.with_suffix(".json.tmp")
+        temporary_manifest.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        temporary_manifest.replace(manifest_path)
+        print(json.dumps({"schema_version": 3, "slot_count": len(slots), "overview_count": len(slots) * len(ELEMENTS)}, ensure_ascii=False))
+        return
+
     targets = json.loads(fetch(TARGET_TIMES_URL).decode("utf-8"))
     eligible = [item for item in targets if all(key in item.get("elements", []) for key in ELEMENTS.values())]
     if not eligible:
@@ -367,10 +449,12 @@ def main() -> None:
         existing_manifest = None
     if (
         isinstance(existing_manifest, dict)
-        and existing_manifest.get("schema_version") == 2
+        and existing_manifest.get("schema_version") == 3
         and [str(slot.get("validtime")) for slot in existing_manifest.get("slots", [])] == selected_ids
         and all(
-            validtime in existing_slots and slot_is_intact(args.out_dir, existing_slots[validtime], zooms)
+            validtime in existing_slots
+            and slot_is_intact(args.out_dir, existing_slots[validtime], zooms)
+            and overview_is_intact(args.out_dir, existing_slots[validtime])
             for validtime in selected_ids
         )
     ):
@@ -387,19 +471,19 @@ def main() -> None:
         validtime = str(target["validtime"])
         existing = existing_slots.get(validtime)
         if existing and slot_is_intact(args.out_dir, existing, zooms):
-            slots.append(existing)
+            slots.append(ensure_slot_overviews(args.out_dir, existing, max(zooms)))
             continue
         discovered = inspect_existing_slot(args.out_dir, target)
         if discovered and slot_is_intact(args.out_dir, discovered, zooms):
-            slots.append(discovered)
+            slots.append(ensure_slot_overviews(args.out_dir, discovered, max(zooms)))
             continue
         print(f"downloading 推計気象分布 {index}/{len(selected_targets)}: {validtime}", flush=True)
-        slots.append(download_slot(args.out_dir, target, zooms, args.workers))
+        slots.append(ensure_slot_overviews(args.out_dir, download_slot(args.out_dir, target, zooms, args.workers), max(zooms)))
 
     latest = slots[-1]
     temperature_labels = update_temperature_labels(args.out_dir, selected_targets[-1], args.workers)
     manifest = {
-        "schema_version": 2,
+        "schema_version": 3,
         "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "source": "JMA estimated weather distribution (推計気象分布)",
         "source_target_times": TARGET_TIMES_URL,
@@ -430,6 +514,10 @@ def main() -> None:
     keep_ids = {str(slot["validtime"]) for slot in slots}
     for stale in (path for path in tile_root.iterdir() if path.is_dir() and path.name not in keep_ids):
         shutil.rmtree(stale)
+    overview_root = args.out_dir / "suikei_overviews"
+    if overview_root.is_dir():
+        for stale in (path for path in overview_root.iterdir() if path.is_dir() and path.name not in keep_ids):
+            shutil.rmtree(stale)
     print(json.dumps(manifest, ensure_ascii=False, indent=2))
 
 
