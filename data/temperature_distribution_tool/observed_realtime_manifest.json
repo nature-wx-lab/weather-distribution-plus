@@ -1,13 +1,13 @@
 {
   "generator_version": 4,
-  "generated_at": "2026-06-29T19:42:03.604876+09:00",
-  "latest_time": "2026-06-29T19:30:00+09:00",
+  "generated_at": "2026-06-29T19:52:18.695079+09:00",
+  "latest_time": "2026-06-29T19:40:00+09:00",
   "source": "JMA AMeDAS latest_time.txt / data/map/{YYYYMMDDHHMM00}.json 10-minute observations",
   "realtime_layers": {
     "station_observations": {
       "json": "observed_realtime_station_observations.json",
       "csv": "observed_realtime_station_observations.csv",
-      "latest_time": "2026-06-29T19:30:00+09:00",
+      "latest_time": "2026-06-29T19:40:00+09:00",
       "station_count": 1286,
       "elements": {
         "temperature": {
@@ -210,7 +210,7 @@
       "label": "29日最低",
       "element": "min",
       "target_date": "2026-06-29",
-      "target_time": "2026-06-29T19:30:00+09:00",
+      "target_time": "2026-06-29T19:40:00+09:00",
       "status": "available",
       "source": "realtime",
       "station_reference": "observed_20260629_min_station_values.json",
@@ -224,7 +224,7 @@
       "label": "29日最高",
       "element": "max",
       "target_date": "2026-06-29",
-      "target_time": "2026-06-29T19:30:00+09:00",
+      "target_time": "2026-06-29T19:40:00+09:00",
       "status": "available",
       "source": "realtime",
       "station_reference": "observed_20260629_max_station_values.json",
