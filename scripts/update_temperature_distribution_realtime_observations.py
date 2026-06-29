@@ -669,11 +669,16 @@ def build(args: argparse.Namespace) -> None:
                     "source": "daily",
                     "station_reference": reference_path.name,
                     "station_reference_count": int(reference_payload.get("station_count") or 0),
+                    "previous_comparison_date": (target_date - timedelta(days=1)).isoformat(),
+                    "previous_comparison_source": "observed_daily",
+                    "previous_comparison_method": "jma_mdrr_previous_difference",
                 })
                 continue
             skip_write = False
             official_normal_average_grid = None
             station_reference_values: list[RealtimeStationValue] = []
+            previous_comparison_source = ""
+            previous_comparison_method = ""
             try:
                 official = fetch_daily_station_values(target_date, element, station_inventory)
             except Exception as exc:
@@ -689,13 +694,29 @@ def build(args: argparse.Namespace) -> None:
                 if official["previous"]:
                     previous_diff_grid = idw_values(grid_points, official["previous"])
                     previous_grid = grid - previous_diff_grid
+                    previous_comparison_source = "observed_daily"
+                    previous_comparison_method = "jma_mdrr_previous_difference"
                 else:
                     previous_grid = realtime_previous_grids.get(element) if target_date == latest_date else None
+                    if previous_grid is not None:
+                        previous_comparison_source = (
+                            "observed_daily"
+                            if observed_latest and target_date - timedelta(days=1) <= observed_latest
+                            else "observed_realtime"
+                        )
+                        previous_comparison_method = "difference_of_observed_grids"
                 source = "realtime" if target_date == latest_date else "daily"
             elif target_date == latest_date:
                 station_reference_values = make_station_values(records, element)
                 grid = value_grids[element]
                 previous_grid = realtime_previous_grids.get(element)
+                if previous_grid is not None:
+                    previous_comparison_source = (
+                        "observed_daily"
+                        if observed_latest and target_date - timedelta(days=1) <= observed_latest
+                        else "observed_realtime"
+                    )
+                    previous_comparison_method = "difference_of_observed_grids"
                 source = "realtime"
             elif observed_latest and target_date <= observed_latest:
                 station_values = load_daily_station_values(args.index, args.station_dir, element, target_date)
@@ -706,9 +727,14 @@ def build(args: argparse.Namespace) -> None:
                 grid = idw_values(grid_points, station_values)
                 if previous_values:
                     previous_grid = idw_values(grid_points, previous_values)
+                    previous_comparison_source = "observed_daily"
+                    previous_comparison_method = "difference_of_observed_grids"
                 else:
                     previous_slot_id = f"{(target_date - timedelta(days=1)).strftime('%Y%m%d')}_{element}"
                     previous_grid = load_saved_slot_observed_grid(args.out_dir, previous_slot_id, len(grid_points_2d))
+                    if previous_grid is not None:
+                        previous_comparison_source = "observed_realtime"
+                        previous_comparison_method = "difference_of_observed_grids"
                 source = "daily"
             elif observed_slot_files_exist(args.out_dir, slot_id):
                 grid = None
@@ -765,11 +791,15 @@ def build(args: argparse.Namespace) -> None:
                     "station_reference": station_reference_path(args.out_dir, slot_id).name
                     if station_reference_path(args.out_dir, slot_id).exists() else "",
                     "station_reference_count": len(station_reference_values),
+                    "previous_comparison_date": (target_date - timedelta(days=1)).isoformat()
+                    if previous_grid is not None else "",
+                    "previous_comparison_source": previous_comparison_source,
+                    "previous_comparison_method": previous_comparison_method,
                 }
             )
 
     manifest = {
-        "generator_version": 3,
+        "generator_version": 4,
         "generated_at": datetime.now(JST).isoformat(),
         "latest_time": latest.isoformat(),
         "source": "JMA AMeDAS latest_time.txt / data/map/{YYYYMMDDHHMM00}.json 10-minute observations",
