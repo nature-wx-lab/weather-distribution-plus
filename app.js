@@ -1,11 +1,7 @@
-if (window.location.protocol === "file:") {
-  window.location.replace("http://localhost:8765/public/temperature-distribution/");
-}
-
-const DATA_ROOT = "../../outputs/weather/temperature_distribution_tool";
-const BOUNDARY_URL = "../../data/geography_japan_prefectures.geojson";
-const WORLD_BOUNDARY_URL = "../../data/geography_world_countries.geojson";
-const PLACE_LABEL_URL = "../../data/weather/japan_all_stations/station_inventory_current_temperature.csv";
+const DATA_ROOT = "./data/temperature_distribution_tool";
+const BOUNDARY_URL = "./data/geography_japan_prefectures.geojson";
+const WORLD_BOUNDARY_URL = "./data/geography_world_countries.geojson";
+const PLACE_LABEL_URL = "./data/station_inventory_current_temperature.csv";
 const TEMPERATURE_EXTREMES_URL = `${DATA_ROOT}/temperature_extremes.json`;
 const FORECAST_MANIFEST_POLL_MS = 10 * 60 * 1000;
 const OBSERVED_DATA_POLL_MS = 10 * 60 * 1000;
