@@ -209,6 +209,13 @@
               <input id="terrainToggle" type="checkbox" />
               <span>地形</span>
             </label>
+            <label class="terrain-style-control subordinate-control">
+              <span>地形表示</span>
+              <select id="terrainStyleSelect" disabled>
+                <option value="color">カラー</option>
+                <option value="mono">白黒</option>
+              </select>
+            </label>
             <label class="opacity-control">
               <span>気象色の濃さ</span>
               <input id="weatherOpacityRange" type="range" min="25" max="100" step="5" value="85" />
@@ -316,6 +323,6 @@
       出典: 気象庁「天気分布予報」GeoJSON、気象庁「推計気象分布」、気象庁日別値、気象庁アメダス10分値。平均値は地点統計をIDW補間した暫定値。地図境界データ: dataofjapan/land、Natural Earth系 countries GeoJSON。詳細地図・地形: 国土地理院タイル。
     </footer>
 
-  <script src="./app.js?v=20260630-maplayers2" defer></script>
+  <script src="./app.js?v=20260630-maplayers3" defer></script>
   </body>
 </html>

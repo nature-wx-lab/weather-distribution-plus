@@ -9,8 +9,9 @@ const SUIKEI_MANIFEST_URL = `${DATA_ROOT}/suikei_realtime_manifest.json`;
 const SUIKEI_TILE_CACHE_LIMIT = 240;
 const SUIKEI_TIMELINE_DEBOUNCE_MS = 140;
 const SUIKEI_OVERVIEW_MAX_ZOOM_RATIO = 2.2;
-const GSI_TILE_CACHE_LIMIT = 180;
+const GSI_TILE_CACHE_LIMIT = 120;
 let suikeiTimelineLoadTimer = null;
+let scheduledMapDraw = null;
 const MAX_INTERPOLATION_ELEVATION_M = 1500;
 const MAJOR_PLACE_NAMES = new Set([
   "稚内", "旭川", "札幌", "釧路", "青森", "盛岡", "秋田", "仙台", "山形", "福島",
@@ -55,6 +56,7 @@ const state = {
   showDetailMap: false,
   showTransport: true,
   showTerrain: false,
+  terrainStyle: "color",
   weatherOpacity: 0.85,
   terrainOpacity: 0.35,
   gsiTileCache: new Map(),
@@ -122,6 +124,7 @@ const els = {
   detailMapToggle: document.getElementById("detailMapToggle"),
   transportToggle: document.getElementById("transportToggle"),
   terrainToggle: document.getElementById("terrainToggle"),
+  terrainStyleSelect: document.getElementById("terrainStyleSelect"),
   weatherOpacityRange: document.getElementById("weatherOpacityRange"),
   weatherOpacityValue: document.getElementById("weatherOpacityValue"),
   terrainOpacityRange: document.getElementById("terrainOpacityRange"),
@@ -176,6 +179,14 @@ function resizeCanvasToDisplay() {
     els.canvas.height = height;
     fitView();
   }
+}
+
+function scheduleMapDraw() {
+  if (scheduledMapDraw != null) return;
+  scheduledMapDraw = window.requestAnimationFrame(() => {
+    scheduledMapDraw = null;
+    draw();
+  });
 }
 
 function csvPath() {
@@ -1913,10 +1924,10 @@ function drawGsiTileLayer(layerId, opacity) {
   const n = 2 ** z;
   const lonToX = (lon) => Math.floor((Number(lon) + 180) / 360 * n);
   const latToY = (lat) => Math.floor((1 - Math.asinh(Math.tan(Number(lat) * Math.PI / 180)) / Math.PI) / 2 * n);
-  const xMin = Math.max(0, lonToX(bounds[0]) - 1);
-  const xMax = Math.min(n - 1, lonToX(bounds[2]) + 1);
-  const yMin = Math.max(0, latToY(bounds[3]) - 1);
-  const yMax = Math.min(n - 1, latToY(bounds[1]) + 1);
+  const xMin = Math.max(0, lonToX(bounds[0]));
+  const xMax = Math.min(n - 1, lonToX(bounds[2]));
+  const yMin = Math.max(0, latToY(bounds[3]));
+  const yMax = Math.min(n - 1, latToY(bounds[1]));
   ctx.save();
   ctx.globalAlpha = opacity;
   ctx.imageSmoothingEnabled = true;
@@ -1930,9 +1941,10 @@ function drawGsiTileLayer(layerId, opacity) {
     if (!entry) {
       const image = new Image();
       image.crossOrigin = "anonymous";
+      image.decoding = "async";
       entry = { image, status: "loading" };
       state.gsiTileCache.set(url, entry);
-      image.onload = () => { entry.status = "loaded"; trimGsiTileCache(); draw(); };
+      image.onload = () => { entry.status = "loaded"; trimGsiTileCache(); scheduleMapDraw(); };
       image.onerror = () => { entry.status = "missing"; trimGsiTileCache(); };
       image.src = url;
     }
@@ -1948,7 +1960,7 @@ function drawDetailedBaseMap() {
 
 function drawTerrainLayer() {
   if (!state.showTerrain) return;
-  drawGsiTileLayer("relief", state.terrainOpacity);
+  drawGsiTileLayer(state.terrainStyle === "mono" ? "hillshademap" : "relief", state.terrainOpacity);
 }
 
 function suikeiTileUrl(template, z, x, y) {
@@ -3552,7 +3564,7 @@ els.canvas.addEventListener("mousemove", (event) => {
   } else {
     els.tooltip.hidden = true;
   }
-  draw();
+  scheduleMapDraw();
 });
 
 els.canvas.addEventListener("mouseleave", () => {
@@ -3812,6 +3824,8 @@ function syncMapLayerControls() {
   els.transportToggle.checked = state.showTransport;
   els.transportToggle.disabled = !state.showDetailMap;
   els.terrainToggle.checked = state.showTerrain;
+  els.terrainStyleSelect.value = state.terrainStyle;
+  els.terrainStyleSelect.disabled = !state.showTerrain;
   els.weatherOpacityRange.value = String(Math.round(state.weatherOpacity * 100));
   els.weatherOpacityValue.value = `${Math.round(state.weatherOpacity * 100)}%`;
   els.terrainOpacityRange.value = String(Math.round(state.terrainOpacity * 100));
@@ -3827,6 +3841,7 @@ els.tooltipToggle.addEventListener("change", () => {
 els.detailMapToggle.addEventListener("change", () => { state.showDetailMap = els.detailMapToggle.checked; syncMapLayerControls(); draw(); });
 els.transportToggle.addEventListener("change", () => { state.showTransport = els.transportToggle.checked; draw(); });
 els.terrainToggle.addEventListener("change", () => { state.showTerrain = els.terrainToggle.checked; syncMapLayerControls(); draw(); });
+els.terrainStyleSelect.addEventListener("change", () => { state.terrainStyle = els.terrainStyleSelect.value; draw(); });
 els.weatherOpacityRange.addEventListener("input", () => { state.weatherOpacity = Number(els.weatherOpacityRange.value) / 100; syncMapLayerControls(); draw(); });
 els.terrainOpacityRange.addEventListener("input", () => { state.terrainOpacity = Number(els.terrainOpacityRange.value) / 100; syncMapLayerControls(); draw(); });
 
@@ -3882,6 +3897,7 @@ function shareUrl() {
   url.searchParams.set("detail", state.showDetailMap ? "1" : "0");
   url.searchParams.set("transport", state.showTransport ? "1" : "0");
   url.searchParams.set("terrain", state.showTerrain ? "1" : "0");
+  url.searchParams.set("terrainStyle", state.terrainStyle);
   url.searchParams.set("weatherOpacity", String(Math.round(state.weatherOpacity * 100)));
   url.searchParams.set("terrainOpacity", String(Math.round(state.terrainOpacity * 100)));
   return url.toString();
@@ -3936,6 +3952,7 @@ function applyUrlState() {
   if (params.get("detail") === "1") state.showDetailMap = true;
   if (params.get("transport") === "0") state.showTransport = false;
   if (params.get("terrain") === "1") state.showTerrain = true;
+  if (["color", "mono"].includes(params.get("terrainStyle"))) state.terrainStyle = params.get("terrainStyle");
   const weatherOpacity = Number(params.get("weatherOpacity"));
   if (Number.isFinite(weatherOpacity) && weatherOpacity >= 25 && weatherOpacity <= 100) state.weatherOpacity = weatherOpacity / 100;
   const terrainOpacity = Number(params.get("terrainOpacity"));

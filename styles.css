@@ -689,6 +689,22 @@ select {
   font-variant-numeric: tabular-nums;
 }
 
+.terrain-style-control {
+  display: grid;
+  grid-template-columns: minmax(82px, auto) 1fr;
+  align-items: center;
+  gap: 6px;
+  color: #344250;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.terrain-style-control select {
+  min-height: 30px;
+  padding: 4px 26px 4px 8px;
+  font-size: 12px;
+}
+
 .map-layer-settings input:disabled + span,
 .opacity-control input:disabled,
 .opacity-control input:disabled + output {
