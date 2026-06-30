@@ -1,34 +1,34 @@
 {
   "generator_version": 4,
-  "generated_at": "2026-06-30T16:32:19.323857+09:00",
-  "latest_time": "2026-06-30T16:20:00+09:00",
+  "generated_at": "2026-06-30T16:42:25.014378+09:00",
+  "latest_time": "2026-06-30T16:30:00+09:00",
   "source": "JMA AMeDAS latest_time.txt / data/map/{YYYYMMDDHHMM00}.json 10-minute observations",
   "realtime_layers": {
     "station_observations": {
       "json": "observed_realtime_station_observations.json",
       "csv": "observed_realtime_station_observations.csv",
-      "latest_time": "2026-06-30T16:20:00+09:00",
-      "station_count": 1284,
+      "latest_time": "2026-06-30T16:30:00+09:00",
+      "station_count": 1285,
       "elements": {
         "temperature": {
           "field": "temperature_c",
           "unit": "degC",
-          "station_count": 914
+          "station_count": 915
         },
         "precipitation_1h": {
           "field": "precipitation_1h_mm",
           "unit": "mm",
-          "station_count": 1283
+          "station_count": 1284
         },
         "wind_speed": {
           "field": "wind_speed_ms",
           "unit": "m/s",
-          "station_count": 913
+          "station_count": 914
         },
         "wind_direction": {
           "field": "wind_direction_deg",
           "unit": "degree",
-          "station_count": 913
+          "station_count": 914
         }
       },
       "quality_fields": "JMA raw numeric quality codes"
@@ -210,7 +210,7 @@
       "label": "30日最低",
       "element": "min",
       "target_date": "2026-06-30",
-      "target_time": "2026-06-30T16:20:00+09:00",
+      "target_time": "2026-06-30T16:30:00+09:00",
       "status": "available",
       "source": "realtime",
       "station_reference": "observed_20260630_min_station_values.json",
@@ -224,7 +224,7 @@
       "label": "30日最高",
       "element": "max",
       "target_date": "2026-06-30",
-      "target_time": "2026-06-30T16:20:00+09:00",
+      "target_time": "2026-06-30T16:30:00+09:00",
       "status": "available",
       "source": "realtime",
       "station_reference": "observed_20260630_max_station_values.json",
