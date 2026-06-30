@@ -9,6 +9,8 @@ import html
 import json
 import math
 import re
+import time
+import urllib.error
 import urllib.request
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -144,9 +146,25 @@ def fetch_daily_station_values(
     return fields
 
 
-def fetch_text(url: str) -> str:
-    with urllib.request.urlopen(url, timeout=30) as response:
-        return response.read().decode("utf-8")
+def fetch_text(url: str, attempts: int = 5) -> str:
+    """Fetch JMA text while tolerating short publication and transport gaps."""
+    retryable_http = {404, 408, 425, 429, 500, 502, 503, 504}
+    for attempt in range(1, attempts + 1):
+        try:
+            with urllib.request.urlopen(url, timeout=30) as response:
+                return response.read().decode("utf-8")
+        except urllib.error.HTTPError as error:
+            if error.code not in retryable_http or attempt >= attempts:
+                raise
+            reason = f"HTTP {error.code}"
+        except (TimeoutError, urllib.error.URLError, ConnectionError) as error:
+            if attempt >= attempts:
+                raise
+            reason = str(error)
+        delay = 2 ** (attempt - 1)
+        print(f"JMA fetch retry {attempt}/{attempts} after {reason}: {url} (sleep {delay}s)", flush=True)
+        time.sleep(delay)
+    raise RuntimeError(f"JMA fetch retries exhausted: {url}")
 
 
 def fetch_json(url: str) -> dict:

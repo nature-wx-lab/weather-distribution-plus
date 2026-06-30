@@ -52,8 +52,19 @@ jobs:
           else
             git commit -m "Update weather distribution data"
             # A code or documentation push can land while this job is generating
-            # data. Rebase the generated-data commit onto the newest main before
-            # publishing so the refresh is not rejected as non-fast-forward.
-            git pull --rebase origin main
-            git push
+            # data. Rebase and push repeatedly so a short main-branch race does
+            # not turn a successful refresh into a failure notification.
+            for attempt in 1 2 3; do
+              if git pull --rebase -X theirs origin main && git push; then
+                exit 0
+              fi
+              git rebase --abort || true
+              if [ "$attempt" -eq 3 ]; then
+                echo "Failed to publish refreshed data after 3 attempts."
+                exit 1
+              fi
+              delay=$((attempt * 5))
+              echo "Main advanced during publish; retrying in ${delay}s."
+              sleep "$delay"
+            done
           fi

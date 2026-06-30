@@ -8,8 +8,10 @@ import csv
 import gzip
 import json
 import math
+import time
 from datetime import datetime, timedelta
 from pathlib import Path
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from zoneinfo import ZoneInfo
 
@@ -55,13 +57,28 @@ def period_suffix(period: str) -> str:
     return "normal" if period == "normal" else f"{period}y"
 
 
-def fetch_json_fresh(url: str) -> object:
+def fetch_json_fresh(url: str, attempts: int = 5) -> object:
     request = Request(url, headers={"User-Agent": USER_AGENT, "Accept-Encoding": "gzip"})
-    with urlopen(request, timeout=30) as response:
-        payload = response.read()
-        if response.headers.get("Content-Encoding") == "gzip" or payload[:2] == b"\x1f\x8b":
-            payload = gzip.decompress(payload)
-    return json.loads(payload.decode("utf-8"))
+    retryable_http = {404, 408, 425, 429, 500, 502, 503, 504}
+    for attempt in range(1, attempts + 1):
+        try:
+            with urlopen(request, timeout=30) as response:
+                payload = response.read()
+                if response.headers.get("Content-Encoding") == "gzip" or payload[:2] == b"\x1f\x8b":
+                    payload = gzip.decompress(payload)
+            return json.loads(payload.decode("utf-8"))
+        except HTTPError as error:
+            if error.code not in retryable_http or attempt >= attempts:
+                raise
+            reason = f"HTTP {error.code}"
+        except (TimeoutError, URLError, ConnectionError) as error:
+            if attempt >= attempts:
+                raise
+            reason = str(error)
+        delay = 2 ** (attempt - 1)
+        print(f"JMA fetch retry {attempt}/{attempts} after {reason}: {url} (sleep {delay}s)", flush=True)
+        time.sleep(delay)
+    raise RuntimeError(f"JMA fetch retries exhausted: {url}")
 
 
 def latlon_decimal(parts: list[float | int]) -> float:
