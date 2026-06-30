@@ -6,6 +6,9 @@ const TEMPERATURE_EXTREMES_URL = `${DATA_ROOT}/temperature_extremes.json`;
 const FORECAST_MANIFEST_POLL_MS = 10 * 60 * 1000;
 const OBSERVED_DATA_POLL_MS = 10 * 60 * 1000;
 const SUIKEI_MANIFEST_URL = `${DATA_ROOT}/suikei_realtime_manifest.json`;
+const JMA_WEATHER_MAP_LIST_URL = "https://www.jma.go.jp/bosai/weather_map/data/list.json";
+const JMA_WEATHER_MAP_IMAGE_ROOT = "https://www.jma.go.jp/bosai/weather_map/data/png";
+const WEATHER_MAP_BOUNDS = [100, 170, 10, 60];
 const SUIKEI_TILE_CACHE_LIMIT = 240;
 const SUIKEI_TIMELINE_DEBOUNCE_MS = 140;
 const SUIKEI_OVERVIEW_MAX_ZOOM_RATIO = 2.2;
@@ -60,6 +63,13 @@ const state = {
   terrainStyle: "color",
   weatherOpacity: 0.85,
   terrainOpacity: 0.35,
+  showWeatherMap: false,
+  weatherMapKind: "now",
+  weatherMapOpacity: 0.75,
+  weatherMapManifest: null,
+  weatherMapImage: null,
+  weatherMapImageKey: "",
+  weatherMapLoading: false,
   gsiTileCache: new Map(),
   placeLabels: [],
   chartStations: [],
@@ -149,6 +159,12 @@ const els = {
   downloadButton: document.getElementById("downloadButton"),
   copyLinkButton: document.getElementById("copyLinkButton"),
   copyLinkStatus: document.getElementById("copyLinkStatus"),
+  weatherMapButton: document.getElementById("weatherMapButton"),
+  weatherMapControls: document.getElementById("weatherMapControls"),
+  weatherMapKindSelect: document.getElementById("weatherMapKindSelect"),
+  weatherMapOpacityRange: document.getElementById("weatherMapOpacityRange"),
+  weatherMapOpacityValue: document.getElementById("weatherMapOpacityValue"),
+  weatherMapStatus: document.getElementById("weatherMapStatus"),
   canvasWrap: document.querySelector(".canvas-wrap"),
   zoomThumb: document.querySelector(".zoom-thumb"),
   pointChartPanel: document.getElementById("pointChartPanel"),
@@ -587,6 +603,107 @@ async function loadTemperatureExtremes() {
     state.temperatureExtremes = await response.json();
   } catch {
     state.temperatureExtremes = null;
+  }
+}
+
+function weatherMapFileName() {
+  const files = state.weatherMapManifest?.near?.[state.weatherMapKind];
+  return Array.isArray(files) && files.length ? files[files.length - 1] : "";
+}
+
+function weatherMapTimeLabel(fileName) {
+  const match = String(fileName).match(/_(\d{14})_MET_/);
+  if (!match) return "";
+  const value = match[1];
+  return `${Number(value.slice(4, 6))}月${Number(value.slice(6, 8))}日${Number(value.slice(8, 10))}時`;
+}
+
+function syncWeatherMapControls() {
+  if (!els.weatherMapButton) return;
+  els.weatherMapButton.classList.toggle("active", state.showWeatherMap);
+  els.weatherMapButton.setAttribute("aria-pressed", state.showWeatherMap ? "true" : "false");
+  els.weatherMapControls.hidden = !state.showWeatherMap;
+  els.weatherMapKindSelect.value = state.weatherMapKind;
+  els.weatherMapOpacityRange.value = String(Math.round(state.weatherMapOpacity * 100));
+  els.weatherMapOpacityValue.value = `${Math.round(state.weatherMapOpacity * 100)}%`;
+  if (!state.showWeatherMap) return;
+  const fileName = weatherMapFileName();
+  const kindLabel = state.weatherMapKind === "now" ? "最新実況" : state.weatherMapKind === "ft24" ? "24時間予想" : "48時間予想";
+  els.weatherMapStatus.textContent = state.weatherMapLoading
+    ? `${kindLabel}を読み込み中…`
+    : fileName
+      ? `気象庁 ${kindLabel}（${weatherMapTimeLabel(fileName)}）を試験投影中`
+      : `${kindLabel}を取得できませんでした`;
+}
+
+async function loadWeatherMapManifest() {
+  try {
+    const response = await fetch(JMA_WEATHER_MAP_LIST_URL, { cache: "no-store" });
+    if (!response.ok) throw new Error(String(response.status));
+    state.weatherMapManifest = await response.json();
+  } catch {
+    state.weatherMapManifest = null;
+  }
+  syncWeatherMapControls();
+}
+
+function extractWeatherMapInk(image) {
+  const canvas = document.createElement("canvas");
+  canvas.width = image.naturalWidth;
+  canvas.height = image.naturalHeight;
+  const imageContext = canvas.getContext("2d", { willReadFrequently: true });
+  imageContext.drawImage(image, 0, 0);
+  const pixels = imageContext.getImageData(0, 0, canvas.width, canvas.height);
+  const data = pixels.data;
+  for (let y = 0; y < canvas.height; y += 1) {
+    for (let x = 0; x < canvas.width; x += 1) {
+      const index = (y * canvas.width + x) * 4;
+      const red = data[index];
+      const green = data[index + 1];
+      const blue = data[index + 2];
+      const brightest = Math.max(red, green, blue);
+      const isDarkInk = brightest < 178
+        && Math.abs(red - green) < 30
+        && Math.abs(green - blue) < 30;
+      const isRedInk = red > 115 && red > green * 1.45 && red > blue * 1.35;
+      const isBlueInk = blue > 105 && blue > red * 1.5 && blue > green * 1.25;
+      const insideMap = y >= 28 && y < canvas.height - 22;
+      if (!(insideMap && (isDarkInk || isRedInk || isBlueInk))) data[index + 3] = 0;
+      else data[index + 3] = Math.min(255, Math.max(110, data[index + 3]));
+    }
+  }
+  imageContext.putImageData(pixels, 0, 0);
+  return canvas;
+}
+
+async function loadWeatherMapImage() {
+  if (!state.showWeatherMap) return;
+  if (!state.weatherMapManifest) await loadWeatherMapManifest();
+  const fileName = weatherMapFileName();
+  if (!fileName) {
+    state.weatherMapImage = null;
+    syncWeatherMapControls();
+    draw();
+    return;
+  }
+  if (state.weatherMapImage && state.weatherMapImageKey === fileName) return;
+  state.weatherMapLoading = true;
+  syncWeatherMapControls();
+  try {
+    const image = new Image();
+    image.crossOrigin = "anonymous";
+    image.decoding = "async";
+    image.src = `${JMA_WEATHER_MAP_IMAGE_ROOT}/${fileName}`;
+    await image.decode();
+    state.weatherMapImage = extractWeatherMapInk(image);
+    state.weatherMapImageKey = fileName;
+  } catch {
+    state.weatherMapImage = null;
+    state.weatherMapImageKey = "";
+  } finally {
+    state.weatherMapLoading = false;
+    syncWeatherMapControls();
+    draw();
   }
 }
 
@@ -2256,6 +2373,18 @@ function drawPolygonValueLabels() {
   });
 }
 
+function drawWeatherMapOverlay() {
+  if (!state.showWeatherMap || !state.weatherMapImage) return;
+  const [west, east, south, north] = WEATHER_MAP_BOUNDS;
+  const [x0, y0] = lonLatToPixel(west, north);
+  const [x1, y1] = lonLatToPixel(east, south);
+  ctx.save();
+  ctx.globalAlpha = state.weatherMapOpacity;
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(state.weatherMapImage, x0, y0, x1 - x0, y1 - y0);
+  ctx.restore();
+}
+
 function updateHeadings() {
   const dataType = currentDataType();
   const elementLabel = state.source === "observed" && state.observedLayer === "precip1h" ? "1時間降水量" : state.source === "observed" && state.observedLayer === "wind" ? "風向・風速" : dataType === "weather" ? (state.source === "observed" ? "推定天気" : "天気") : dataType === "sunshine" ? "日照時間" : dataType === "precipitation" ? "3時間降水量" : dataType === "snowfall" ? "3時間降雪量" : state.element === "temp" ? "実況気温" : state.element === "max" ? "最高気温" : "最低気温";
@@ -2456,6 +2585,7 @@ function draw() {
   drawRealtimeStations();
   drawSuikeiTiles();
   drawWeatherPolygons();
+  drawWeatherMapOverlay();
   drawBoundaries();
   drawPointValueLabels();
   drawSuikeiValueLabels();
@@ -3916,6 +4046,7 @@ function syncMapLayerControls() {
   els.terrainOpacityRange.value = String(Math.round(state.terrainOpacity * 100));
   els.terrainOpacityValue.value = `${Math.round(state.terrainOpacity * 100)}%`;
   els.terrainOpacityRange.disabled = !state.showTerrain;
+  syncWeatherMapControls();
 }
 
 els.tooltipToggle.addEventListener("change", () => {
@@ -3928,6 +4059,23 @@ els.terrainToggle.addEventListener("change", () => { state.showTerrain = els.ter
 els.terrainStyleSelect.addEventListener("change", () => { state.terrainStyle = els.terrainStyleSelect.value; draw(); });
 els.weatherOpacityRange.addEventListener("input", () => { state.weatherOpacity = Number(els.weatherOpacityRange.value) / 100; syncMapLayerControls(); draw(); });
 els.terrainOpacityRange.addEventListener("input", () => { state.terrainOpacity = Number(els.terrainOpacityRange.value) / 100; syncMapLayerControls(); draw(); });
+els.weatherMapButton?.addEventListener("click", async () => {
+  state.showWeatherMap = !state.showWeatherMap;
+  syncWeatherMapControls();
+  if (state.showWeatherMap) await loadWeatherMapImage();
+  else draw();
+});
+els.weatherMapKindSelect?.addEventListener("change", async () => {
+  state.weatherMapKind = els.weatherMapKindSelect.value;
+  state.weatherMapImage = null;
+  state.weatherMapImageKey = "";
+  await loadWeatherMapImage();
+});
+els.weatherMapOpacityRange?.addEventListener("input", () => {
+  state.weatherMapOpacity = Number(els.weatherMapOpacityRange.value) / 100;
+  syncWeatherMapControls();
+  draw();
+});
 
 els.recordMarkersButton?.addEventListener("click", () => {
   if (els.recordMarkersButton.disabled) return;
@@ -3986,6 +4134,9 @@ function shareUrl() {
   url.searchParams.set("terrainStyle", state.terrainStyle);
   url.searchParams.set("weatherOpacity", String(Math.round(state.weatherOpacity * 100)));
   url.searchParams.set("terrainOpacity", String(Math.round(state.terrainOpacity * 100)));
+  url.searchParams.set("weatherMap", state.showWeatherMap ? "1" : "0");
+  url.searchParams.set("weatherMapKind", state.weatherMapKind);
+  url.searchParams.set("weatherMapOpacity", String(Math.round(state.weatherMapOpacity * 100)));
   return url.toString();
 }
 
@@ -4044,6 +4195,11 @@ function applyUrlState() {
   if (Number.isFinite(weatherOpacity) && weatherOpacity >= 25 && weatherOpacity <= 100) state.weatherOpacity = weatherOpacity / 100;
   const terrainOpacity = Number(params.get("terrainOpacity"));
   if (Number.isFinite(terrainOpacity) && terrainOpacity >= 10 && terrainOpacity <= 80) state.terrainOpacity = terrainOpacity / 100;
+  if (params.get("weatherMap") === "1") state.showWeatherMap = true;
+  if (["now", "ft24", "ft48"].includes(params.get("weatherMapKind"))) state.weatherMapKind = params.get("weatherMapKind");
+  const weatherMapOpacityParam = params.get("weatherMapOpacity");
+  const weatherMapOpacity = Number(weatherMapOpacityParam);
+  if (weatherMapOpacityParam !== null && Number.isFinite(weatherMapOpacity) && weatherMapOpacity >= 0 && weatherMapOpacity <= 100) state.weatherMapOpacity = weatherMapOpacity / 100;
 }
 
 window.addEventListener("resize", () => {
@@ -4053,6 +4209,7 @@ window.addEventListener("resize", () => {
 
 async function init() {
   applyUrlState();
+  const weatherMapManifestPromise = loadWeatherMapManifest();
   await Promise.all([loadBoundaries(), loadPlaceLabels(), loadTemperatureExtremes()]);
   await Promise.all([loadForecastManifest(), loadObservedManifest()]);
   await loadSuikeiManifest();
@@ -4072,6 +4229,10 @@ async function init() {
   syncMapLayerControls();
   syncTimelineFromElement();
   await loadData();
+  if (state.showWeatherMap) {
+    await weatherMapManifestPromise;
+    await loadWeatherMapImage();
+  }
   window.setInterval(checkForecastManifestUpdate, FORECAST_MANIFEST_POLL_MS);
   window.setInterval(checkObservedDataUpdate, OBSERVED_DATA_POLL_MS);
 }

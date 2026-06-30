@@ -634,6 +634,50 @@ select {
   font-size: 13px;
 }
 
+.share-actions {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.share-actions button {
+  min-width: 0;
+  padding-inline: 8px;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.share-actions button.active {
+  color: #176447;
+  border-color: #5fb88e;
+  background: #e9f7ef;
+  box-shadow: inset 4px 0 #36a46f;
+}
+
+.weather-map-controls {
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px solid #cad5df;
+  border-radius: 8px;
+  background: #f7fafc;
+}
+
+.weather-map-controls > label:first-child {
+  display: grid;
+  grid-template-columns: 78px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.weather-map-controls select {
+  min-width: 0;
+}
+
+.weather-map-status {
+  margin: 6px 0 0;
+  color: #66717d;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
 .share-actions button.copied {
   border-color: #4da477;
   background: #eef8f3;
