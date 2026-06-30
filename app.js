@@ -55,12 +55,10 @@ const state = {
   showPlaceLabels: true,
   showTooltip: true,
   showDetailMap: false,
-  showTransport: true,
   showTerrain: false,
   terrainStyle: "color",
   weatherOpacity: 0.85,
   terrainOpacity: 0.35,
-  temperaturePalette: "standard",
   gsiTileCache: new Map(),
   placeLabels: [],
   chartStations: [],
@@ -124,14 +122,12 @@ const els = {
   placeLabelsToggle: document.getElementById("placeLabelsToggle"),
   tooltipToggle: document.getElementById("tooltipToggle"),
   detailMapToggle: document.getElementById("detailMapToggle"),
-  transportToggle: document.getElementById("transportToggle"),
   terrainToggle: document.getElementById("terrainToggle"),
   terrainStyleSelect: document.getElementById("terrainStyleSelect"),
   weatherOpacityRange: document.getElementById("weatherOpacityRange"),
   weatherOpacityValue: document.getElementById("weatherOpacityValue"),
   terrainOpacityRange: document.getElementById("terrainOpacityRange"),
   terrainOpacityValue: document.getElementById("terrainOpacityValue"),
-  temperaturePaletteSelect: document.getElementById("temperaturePaletteSelect"),
   statusText: document.getElementById("statusText"),
   mapTitle: document.getElementById("mapTitle"),
   mapSubtitle: document.getElementById("mapSubtitle"),
@@ -877,24 +873,6 @@ function colorRamp(stops, value) {
 }
 
 function colorForValue(value) {
-  if (state.temperaturePalette === "high") {
-    return colorRamp([
-      [-20, [46, 52, 93]], [-10, [65, 105, 225]], [0, [103, 169, 207]],
-      [10, [222, 235, 247]], [20, [255, 255, 210]], [24.9, [255, 245, 176]],
-      [25, [255, 230, 112]], [29.9, [255, 190, 72]], [30, [250, 132, 54]],
-      [34.9, [238, 68, 50]], [35, [194, 26, 74]], [39.9, [139, 15, 99]],
-      [40, [88, 0, 111]], [45, [45, 0, 65]],
-    ], value);
-  }
-  if (state.temperaturePalette === "low") {
-    return colorRamp([
-      [-25, [25, 25, 70]], [-10, [42, 61, 145]], [-0.1, [55, 105, 205]],
-      [0, [42, 131, 218]], [4.9, [78, 177, 226]], [5, [112, 210, 229]],
-      [9.9, [178, 234, 232]], [10, [222, 246, 233]], [14.9, [255, 250, 193]],
-      [15, [255, 230, 130]], [20, [254, 224, 139]], [25, [254, 175, 88]],
-      [30, [244, 109, 67]], [35, [197, 27, 125]], [40, [94, 0, 106]],
-    ], value);
-  }
   return colorRamp([
     [-20, [46, 52, 93]],
     [-10, [65, 105, 225]],
@@ -1760,13 +1738,12 @@ function legendConfig() {
     };
   }
   if (state.mode === "value") {
-    const paletteConfig = { labels: [40, 35, 30, 25, 20, 15, 10, 5, 0, -10, -20], min: -20, max: 40 };
     return {
       title: "気温",
-      titleLines: state.temperaturePalette === "high" ? ["気温", "高温注目"] : state.temperaturePalette === "low" ? ["気温", "低温注目"] : ["気温"],
-      labels: paletteConfig.labels,
-      min: paletteConfig.min,
-      max: paletteConfig.max,
+      labels: [40, 35, 30, 25, 20, 15, 10, 5, 0, -5, -10, -15, -20],
+      min: -20,
+      max: 40,
+      gridStep: 5,
       color: colorForValue,
       signed: false,
     };
@@ -1842,6 +1819,16 @@ function drawMapLegend() {
   }
   ctx.strokeStyle = "#4d5862";
   ctx.strokeRect(barLeft, barTop, barW, barH);
+  if (cfg.gridStep) {
+    ctx.save();
+    ctx.strokeStyle = "rgba(55,65,75,0.5)";
+    ctx.lineWidth = 1;
+    for (let value = Math.ceil(cfg.min / cfg.gridStep) * cfg.gridStep; value <= cfg.max; value += cfg.gridStep) {
+      const y = barTop + ((cfg.max - value) / (cfg.max - cfg.min)) * barH;
+      ctx.beginPath(); ctx.moveTo(barLeft, y); ctx.lineTo(barLeft + barW, y); ctx.stroke();
+    }
+    ctx.restore();
+  }
   ctx.fillStyle = "#202932";
   ctx.font = "900 25px -apple-system, BlinkMacSystemFont, sans-serif";
   cfg.labels.forEach((value) => {
@@ -1982,7 +1969,7 @@ function drawGsiTileLayer(layerId, opacity) {
 
 function drawDetailedBaseMap() {
   if (!state.showDetailMap) return;
-  drawGsiTileLayer(state.showTransport ? "std" : "pale", 0.72);
+  drawGsiTileLayer("std", 0.72);
 }
 
 function drawTerrainLayer() {
@@ -3865,8 +3852,6 @@ els.placeLabelsToggle.addEventListener("change", () => {
 function syncMapLayerControls() {
   els.tooltipToggle.checked = state.showTooltip;
   els.detailMapToggle.checked = state.showDetailMap;
-  els.transportToggle.checked = state.showTransport;
-  els.transportToggle.disabled = !state.showDetailMap;
   els.terrainToggle.checked = state.showTerrain;
   els.terrainStyleSelect.value = state.terrainStyle;
   els.terrainStyleSelect.disabled = !state.showTerrain;
@@ -3875,8 +3860,6 @@ function syncMapLayerControls() {
   els.terrainOpacityRange.value = String(Math.round(state.terrainOpacity * 100));
   els.terrainOpacityValue.value = `${Math.round(state.terrainOpacity * 100)}%`;
   els.terrainOpacityRange.disabled = !state.showTerrain;
-  els.temperaturePaletteSelect.value = state.temperaturePalette;
-  els.temperaturePaletteSelect.disabled = currentDataType() !== "temperature" || state.mode !== "value" || (state.source === "observed" && state.observedLayer === "temp");
 }
 
 els.tooltipToggle.addEventListener("change", () => {
@@ -3885,12 +3868,10 @@ els.tooltipToggle.addEventListener("change", () => {
   draw();
 });
 els.detailMapToggle.addEventListener("change", () => { state.showDetailMap = els.detailMapToggle.checked; syncMapLayerControls(); draw(); });
-els.transportToggle.addEventListener("change", () => { state.showTransport = els.transportToggle.checked; draw(); });
 els.terrainToggle.addEventListener("change", () => { state.showTerrain = els.terrainToggle.checked; syncMapLayerControls(); draw(); });
 els.terrainStyleSelect.addEventListener("change", () => { state.terrainStyle = els.terrainStyleSelect.value; draw(); });
 els.weatherOpacityRange.addEventListener("input", () => { state.weatherOpacity = Number(els.weatherOpacityRange.value) / 100; syncMapLayerControls(); draw(); });
 els.terrainOpacityRange.addEventListener("input", () => { state.terrainOpacity = Number(els.terrainOpacityRange.value) / 100; syncMapLayerControls(); draw(); });
-els.temperaturePaletteSelect.addEventListener("change", () => { state.temperaturePalette = els.temperaturePaletteSelect.value; draw(); });
 
 els.recordMarkersButton?.addEventListener("click", () => {
   if (els.recordMarkersButton.disabled) return;
@@ -3942,12 +3923,10 @@ function shareUrl() {
   url.searchParams.set("labels", state.showPlaceLabels ? "1" : "0");
   url.searchParams.set("tooltip", state.showTooltip ? "1" : "0");
   url.searchParams.set("detail", state.showDetailMap ? "1" : "0");
-  url.searchParams.set("transport", state.showTransport ? "1" : "0");
   url.searchParams.set("terrain", state.showTerrain ? "1" : "0");
   url.searchParams.set("terrainStyle", state.terrainStyle);
   url.searchParams.set("weatherOpacity", String(Math.round(state.weatherOpacity * 100)));
   url.searchParams.set("terrainOpacity", String(Math.round(state.terrainOpacity * 100)));
-  url.searchParams.set("palette", state.temperaturePalette);
   return url.toString();
 }
 
@@ -3998,14 +3977,12 @@ function applyUrlState() {
   if (params.get("labels") === "0") state.showPlaceLabels = false;
   if (params.get("tooltip") === "0") state.showTooltip = false;
   if (params.get("detail") === "1") state.showDetailMap = true;
-  if (params.get("transport") === "0") state.showTransport = false;
   if (params.get("terrain") === "1") state.showTerrain = true;
   if (["color", "mono"].includes(params.get("terrainStyle"))) state.terrainStyle = params.get("terrainStyle");
   const weatherOpacity = Number(params.get("weatherOpacity"));
   if (Number.isFinite(weatherOpacity) && weatherOpacity >= 25 && weatherOpacity <= 100) state.weatherOpacity = weatherOpacity / 100;
   const terrainOpacity = Number(params.get("terrainOpacity"));
   if (Number.isFinite(terrainOpacity) && terrainOpacity >= 10 && terrainOpacity <= 80) state.terrainOpacity = terrainOpacity / 100;
-  if (["standard", "high", "low"].includes(params.get("palette"))) state.temperaturePalette = params.get("palette");
 }
 
 window.addEventListener("resize", () => {
