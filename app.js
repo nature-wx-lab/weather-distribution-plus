@@ -10,6 +10,7 @@ const SUIKEI_TILE_CACHE_LIMIT = 240;
 const SUIKEI_TIMELINE_DEBOUNCE_MS = 140;
 const SUIKEI_OVERVIEW_MAX_ZOOM_RATIO = 2.2;
 const GSI_TILE_CACHE_LIMIT = 120;
+const MAX_MAP_SCALE = 30000;
 let suikeiTimelineLoadTimer = null;
 let scheduledMapDraw = null;
 const MAX_INTERPOLATION_ELEVATION_M = 1500;
@@ -811,7 +812,7 @@ function zoomAt(canvasX, canvasY, factor) {
   ensureView();
   const before = pixelToLonLat(canvasX, canvasY);
   const [beforeX, beforeY] = project(before[0], before[1]);
-  state.view.scale = Math.max(state.minScale || 12, Math.min(5000, state.view.scale * factor));
+  state.view.scale = Math.max(state.minScale || 12, Math.min(MAX_MAP_SCALE, state.view.scale * factor));
   state.view.centerX = beforeX - (canvasX - els.canvas.width / 2) / state.view.scale;
   state.view.centerY = beforeY + (canvasY - els.canvas.height / 2) / state.view.scale;
   clampView();
@@ -821,7 +822,7 @@ function zoomAt(canvasX, canvasY, factor) {
 function updateZoomControl() {
   if (!els.zoomThumb || !state.view || !state.minScale) return;
   const min = state.minScale;
-  const max = 5000;
+  const max = MAX_MAP_SCALE;
   const ratio = Math.max(0, Math.min(1, Math.log(state.view.scale / min) / Math.log(max / min)));
   const top = 92 - ratio * 80;
   els.zoomThumb.style.setProperty("--zoom-thumb-top", `${top}px`);
@@ -878,16 +879,20 @@ function colorRamp(stops, value) {
 function colorForValue(value) {
   if (state.temperaturePalette === "high") {
     return colorRamp([
-      [15, [238, 241, 243]], [24.9, [255, 250, 210]], [25, [255, 232, 128]],
-      [29.9, [255, 205, 82]], [30, [249, 139, 60]], [34.9, [239, 82, 54]],
-      [35, [195, 35, 71]], [39.9, [151, 20, 91]], [40, [92, 0, 112]], [42, [55, 0, 78]],
+      [-20, [46, 52, 93]], [-10, [65, 105, 225]], [0, [103, 169, 207]],
+      [10, [222, 235, 247]], [20, [255, 255, 210]], [24.9, [255, 245, 176]],
+      [25, [255, 230, 112]], [29.9, [255, 190, 72]], [30, [250, 132, 54]],
+      [34.9, [238, 68, 50]], [35, [194, 26, 74]], [39.9, [139, 15, 99]],
+      [40, [88, 0, 111]], [45, [45, 0, 65]],
     ], value);
   }
   if (state.temperaturePalette === "low") {
     return colorRamp([
-      [-15, [28, 42, 100]], [0, [45, 91, 190]], [4.9, [74, 151, 219]],
-      [5, [109, 196, 224]], [9.9, [171, 226, 232]], [10, [221, 242, 235]],
-      [14.9, [250, 249, 202]], [15, [255, 230, 146]], [20, [239, 224, 190]],
+      [-25, [25, 25, 70]], [-10, [42, 61, 145]], [-0.1, [55, 105, 205]],
+      [0, [42, 131, 218]], [4.9, [78, 177, 226]], [5, [112, 210, 229]],
+      [9.9, [178, 234, 232]], [10, [222, 246, 233]], [14.9, [255, 250, 193]],
+      [15, [255, 230, 130]], [20, [254, 224, 139]], [25, [254, 175, 88]],
+      [30, [244, 109, 67]], [35, [197, 27, 125]], [40, [94, 0, 106]],
     ], value);
   }
   return colorRamp([
@@ -1755,13 +1760,10 @@ function legendConfig() {
     };
   }
   if (state.mode === "value") {
-    const paletteConfig = state.temperaturePalette === "high"
-      ? { labels: [40, 35, 30, 25, 20], min: 20, max: 42 }
-      : state.temperaturePalette === "low"
-        ? { labels: [20, 15, 10, 5, 0, -5, -10], min: -15, max: 20 }
-        : { labels: [40, 35, 30, 25, 20, 10, 0, -10, -20], min: -20, max: 40 };
+    const paletteConfig = { labels: [40, 35, 30, 25, 20, 15, 10, 5, 0, -10, -20], min: -20, max: 40 };
     return {
-      title: state.temperaturePalette === "high" ? "気温・高温注目" : state.temperaturePalette === "low" ? "気温・低温注目" : "気温",
+      title: "気温",
+      titleLines: state.temperaturePalette === "high" ? ["気温", "高温注目"] : state.temperaturePalette === "low" ? ["気温", "低温注目"] : ["気温"],
       labels: paletteConfig.labels,
       min: paletteConfig.min,
       max: paletteConfig.max,
@@ -1814,9 +1816,11 @@ function drawMapLegend() {
   const left = els.canvas.width - boxW - 28;
   const top = 64;
   const barLeft = left + 34;
-  const barTop = top + 92;
+  const titleLines = cfg.titleLines || [cfg.title];
+  const twoLineTitle = titleLines.length > 1;
+  const barTop = top + (twoLineTitle ? 122 : 92);
   const barW = 58;
-  const barH = boxH - 160;
+  const barH = boxH - (twoLineTitle ? 190 : 160);
   ctx.save();
   ctx.fillStyle = "rgba(255,255,255,0.93)";
   ctx.strokeStyle = "rgba(80,92,104,0.55)";
@@ -1824,12 +1828,12 @@ function drawMapLegend() {
   ctx.fillRect(left, top, boxW, boxH);
   ctx.strokeRect(left, top, boxW, boxH);
   ctx.fillStyle = "#202932";
-  const titleFontSize = cfg.signed ? 23 : 28;
+  const titleFontSize = cfg.signed ? 23 : twoLineTitle ? 23 : 28;
   ctx.font = `900 ${titleFontSize}px -apple-system, BlinkMacSystemFont, sans-serif`;
-  ctx.fillText(cfg.title, left + 24, top + 44);
+  titleLines.forEach((line, index) => ctx.fillText(line, left + 24, top + 40 + index * 29));
   ctx.font = "900 22px -apple-system, BlinkMacSystemFont, sans-serif";
   ctx.textAlign = "right";
-  ctx.fillText("℃", left + boxW - 22, top + 42);
+  ctx.fillText("℃", left + boxW - 22, top + (twoLineTitle ? 68 : 42));
   ctx.textAlign = "left";
   for (let i = 0; i < barH; i += 1) {
     const value = cfg.max - (i / (barH - 1)) * (cfg.max - cfg.min);
@@ -1927,7 +1931,9 @@ function gsiZoomLevel() {
   if (ratio < 28) return 10;
   if (ratio < 50) return 11;
   if (ratio < 90) return 12;
-  return 13;
+  if (ratio < 180) return 13;
+  if (ratio < 350) return 14;
+  return 15;
 }
 
 function trimGsiTileCache() {
