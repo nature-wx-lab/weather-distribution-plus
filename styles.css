@@ -651,6 +651,37 @@ select {
   background: #f8fafb;
 }
 
+.map-display-quick {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.map-display-quick .check-row {
+  min-width: 0;
+  padding: 8px 9px;
+  border: 1px solid #c6d0da;
+  border-radius: 5px;
+  background: #fff;
+  white-space: nowrap;
+}
+
+.temperature-palette-control {
+  display: grid;
+  grid-template-columns: minmax(82px, auto) 1fr;
+  align-items: center;
+  gap: 8px;
+  color: #344250;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.temperature-palette-control select {
+  min-height: 34px;
+  padding: 5px 28px 5px 8px;
+  font-size: 12px;
+}
+
 .map-layer-settings summary {
   padding: 8px 10px;
   color: #344250;

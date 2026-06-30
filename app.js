@@ -59,6 +59,7 @@ const state = {
   terrainStyle: "color",
   weatherOpacity: 0.85,
   terrainOpacity: 0.35,
+  temperaturePalette: "standard",
   gsiTileCache: new Map(),
   placeLabels: [],
   chartStations: [],
@@ -129,6 +130,7 @@ const els = {
   weatherOpacityValue: document.getElementById("weatherOpacityValue"),
   terrainOpacityRange: document.getElementById("terrainOpacityRange"),
   terrainOpacityValue: document.getElementById("terrainOpacityValue"),
+  temperaturePaletteSelect: document.getElementById("temperaturePaletteSelect"),
   statusText: document.getElementById("statusText"),
   mapTitle: document.getElementById("mapTitle"),
   mapSubtitle: document.getElementById("mapSubtitle"),
@@ -874,6 +876,20 @@ function colorRamp(stops, value) {
 }
 
 function colorForValue(value) {
+  if (state.temperaturePalette === "high") {
+    return colorRamp([
+      [15, [238, 241, 243]], [24.9, [255, 250, 210]], [25, [255, 232, 128]],
+      [29.9, [255, 205, 82]], [30, [249, 139, 60]], [34.9, [239, 82, 54]],
+      [35, [195, 35, 71]], [39.9, [151, 20, 91]], [40, [92, 0, 112]], [42, [55, 0, 78]],
+    ], value);
+  }
+  if (state.temperaturePalette === "low") {
+    return colorRamp([
+      [-15, [28, 42, 100]], [0, [45, 91, 190]], [4.9, [74, 151, 219]],
+      [5, [109, 196, 224]], [9.9, [171, 226, 232]], [10, [221, 242, 235]],
+      [14.9, [250, 249, 202]], [15, [255, 230, 146]], [20, [239, 224, 190]],
+    ], value);
+  }
   return colorRamp([
     [-20, [46, 52, 93]],
     [-10, [65, 105, 225]],
@@ -1739,11 +1755,16 @@ function legendConfig() {
     };
   }
   if (state.mode === "value") {
+    const paletteConfig = state.temperaturePalette === "high"
+      ? { labels: [40, 35, 30, 25, 20], min: 20, max: 42 }
+      : state.temperaturePalette === "low"
+        ? { labels: [20, 15, 10, 5, 0, -5, -10], min: -15, max: 20 }
+        : { labels: [40, 35, 30, 25, 20, 10, 0, -10, -20], min: -20, max: 40 };
     return {
-      title: "気温",
-      labels: [40, 35, 30, 25, 20, 10, 0, -10, -20],
-      min: -20,
-      max: 40,
+      title: state.temperaturePalette === "high" ? "気温・高温注目" : state.temperaturePalette === "low" ? "気温・低温注目" : "気温",
+      labels: paletteConfig.labels,
+      min: paletteConfig.min,
+      max: paletteConfig.max,
       color: colorForValue,
       signed: false,
     };
@@ -3402,6 +3423,21 @@ function updatePointChartControls() {
   if (averageLabel) averageLabel.hidden = !(state.pointChartSource === "observed" && state.pointChartType === "daily");
 }
 
+function updateRealtimeCoverage(rows, requestedDays) {
+  if (!els.pointChartMeta) return;
+  if (!rows.length) {
+    els.pointChartMeta.hidden = false;
+    els.pointChartMeta.textContent = "実況時系列データがありません";
+    return;
+  }
+  const first = new Date(rows[0].time);
+  const last = new Date(rows[rows.length - 1].time);
+  const spanDays = Math.max(0, (last.getTime() - first.getTime()) / 86400000);
+  const fmt = new Intl.DateTimeFormat("ja-JP", { month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" });
+  els.pointChartMeta.hidden = false;
+  els.pointChartMeta.textContent = `蓄積 ${fmt.format(first)}〜${fmt.format(last)}（約${spanDays.toFixed(1)}日／指定${requestedDays}日）`;
+}
+
 async function openPointChart(point) {
   if (!point || !els.pointChartPanel) return;
   state.selectedPoint = point;
@@ -3431,6 +3467,7 @@ async function openPointChart(point) {
       drawPointChart(rows);
       updatePointChartLegend(rows, "daily");
     } else {
+      updateRealtimeCoverage(rows, effectiveDays);
       drawRealtimePointChart(rows);
       updatePointChartLegend(rows, "realtime");
     }
@@ -3507,6 +3544,7 @@ function updateControlAvailability() {
     });
   }
   updateModeButtons();
+  syncMapLayerControls();
 }
 
 function updateForecastLayerButtons() {
@@ -3831,6 +3869,8 @@ function syncMapLayerControls() {
   els.terrainOpacityRange.value = String(Math.round(state.terrainOpacity * 100));
   els.terrainOpacityValue.value = `${Math.round(state.terrainOpacity * 100)}%`;
   els.terrainOpacityRange.disabled = !state.showTerrain;
+  els.temperaturePaletteSelect.value = state.temperaturePalette;
+  els.temperaturePaletteSelect.disabled = currentDataType() !== "temperature" || state.mode !== "value" || (state.source === "observed" && state.observedLayer === "temp");
 }
 
 els.tooltipToggle.addEventListener("change", () => {
@@ -3844,6 +3884,7 @@ els.terrainToggle.addEventListener("change", () => { state.showTerrain = els.ter
 els.terrainStyleSelect.addEventListener("change", () => { state.terrainStyle = els.terrainStyleSelect.value; draw(); });
 els.weatherOpacityRange.addEventListener("input", () => { state.weatherOpacity = Number(els.weatherOpacityRange.value) / 100; syncMapLayerControls(); draw(); });
 els.terrainOpacityRange.addEventListener("input", () => { state.terrainOpacity = Number(els.terrainOpacityRange.value) / 100; syncMapLayerControls(); draw(); });
+els.temperaturePaletteSelect.addEventListener("change", () => { state.temperaturePalette = els.temperaturePaletteSelect.value; draw(); });
 
 els.recordMarkersButton?.addEventListener("click", () => {
   if (els.recordMarkersButton.disabled) return;
@@ -3900,6 +3941,7 @@ function shareUrl() {
   url.searchParams.set("terrainStyle", state.terrainStyle);
   url.searchParams.set("weatherOpacity", String(Math.round(state.weatherOpacity * 100)));
   url.searchParams.set("terrainOpacity", String(Math.round(state.terrainOpacity * 100)));
+  url.searchParams.set("palette", state.temperaturePalette);
   return url.toString();
 }
 
@@ -3957,6 +3999,7 @@ function applyUrlState() {
   if (Number.isFinite(weatherOpacity) && weatherOpacity >= 25 && weatherOpacity <= 100) state.weatherOpacity = weatherOpacity / 100;
   const terrainOpacity = Number(params.get("terrainOpacity"));
   if (Number.isFinite(terrainOpacity) && terrainOpacity >= 10 && terrainOpacity <= 80) state.terrainOpacity = terrainOpacity / 100;
+  if (["standard", "high", "low"].includes(params.get("palette"))) state.temperaturePalette = params.get("palette");
 }
 
 window.addEventListener("resize", () => {

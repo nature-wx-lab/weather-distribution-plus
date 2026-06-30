@@ -185,18 +185,20 @@
         </div>
         <p id="copyLinkStatus" class="copy-link-status" role="status" aria-live="polite"></p>
 
-        <label class="check-row">
-          <input id="placeLabelsToggle" type="checkbox" checked />
-          <span>地名を表示</span>
-        </label>
+        <div class="map-display-quick">
+          <label class="check-row">
+            <input id="placeLabelsToggle" type="checkbox" checked />
+            <span>地名を表示</span>
+          </label>
+          <label class="check-row">
+            <input id="tooltipToggle" type="checkbox" checked />
+            <span>ツールチップ</span>
+          </label>
+        </div>
 
         <details class="map-layer-settings" open>
           <summary>地図表示</summary>
           <div class="map-layer-settings-body">
-            <label class="check-row">
-              <input id="tooltipToggle" type="checkbox" checked />
-              <span>ツールチップ</span>
-            </label>
             <label class="check-row">
               <input id="detailMapToggle" type="checkbox" />
               <span>詳細地図（市町村境界）</span>
@@ -228,6 +230,15 @@
             </label>
           </div>
         </details>
+
+        <label class="temperature-palette-control">
+          <span>気温の配色</span>
+          <select id="temperaturePaletteSelect">
+            <option value="standard">標準</option>
+            <option value="high">高温に注目</option>
+            <option value="low">低温に注目</option>
+          </select>
+        </label>
 
         <div class="toggle-row extreme-actions">
           <button id="recordMarkersButton" type="button" aria-pressed="false">気温の記録更新</button>
@@ -323,6 +334,6 @@
       出典: 気象庁「天気分布予報」GeoJSON、気象庁「推計気象分布」、気象庁日別値、気象庁アメダス10分値。平均値は地点統計をIDW補間した暫定値。地図境界データ: dataofjapan/land、Natural Earth系 countries GeoJSON。詳細地図・地形: 国土地理院タイル。
     </footer>
 
-  <script src="./app.js?v=20260630-maplayers3" defer></script>
+  <script src="./app.js?v=20260630-palette1" defer></script>
   </body>
 </html>
