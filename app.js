@@ -25,6 +25,7 @@ const MAJOR_PLACE_NAMES = new Set([
 const state = {
   source: "forecast",
   observedLayer: "daily",
+  observedDailySequence: "both",
   forecastLayer: "daily",
   element: "max",
   mode: "value",
@@ -114,6 +115,8 @@ const els = {
   timelineBottom: document.querySelector(".timeline-labels.bottom"),
   layerControlHeading: document.getElementById("layerControlHeading"),
   observedLayerButtons: document.getElementById("observedLayerButtons"),
+  observedDailySequenceControl: document.getElementById("observedDailySequenceControl"),
+  observedDailySequenceButtons: document.getElementById("observedDailySequenceButtons"),
   dataNotice: document.getElementById("dataNotice"),
   modeSelect: document.getElementById("modeSelect"),
   modeButtons: document.getElementById("modeButtons"),
@@ -222,6 +225,32 @@ function currentForecastSlots() {
 function currentObservedSlot() {
   const slots = state.observedSlots;
   return slots[Math.max(0, Math.min(state.slotIndex, slots.length - 1))] || slots[0];
+}
+
+function activeObservedDailySlots() {
+  if (state.observedDailySequence === "both") return state.observedSlots;
+  return state.observedSlots.filter((slot) => slot.element === state.observedDailySequence);
+}
+
+function normalizeObservedDailySelection() {
+  if (state.observedDailySequence === "both") return;
+  const current = currentObservedSlot();
+  if (current?.element === state.observedDailySequence) return;
+  const sameDateIndex = state.observedSlots.findIndex((slot) => (
+    slot.target_date === current?.target_date && slot.element === state.observedDailySequence
+  ));
+  state.slotIndex = sameDateIndex >= 0 ? sameDateIndex : latestObservedSlotIndex(state.observedDailySequence);
+  state.element = currentObservedSlot()?.element || state.observedDailySequence;
+}
+
+function syncObservedDailySequenceControl() {
+  const visible = state.source === "observed" && state.observedLayer === "daily";
+  if (els.observedDailySequenceControl) els.observedDailySequenceControl.hidden = !visible;
+  els.observedDailySequenceButtons?.querySelectorAll("[data-daily-sequence]").forEach((button) => {
+    const selected = button.dataset.dailySequence === state.observedDailySequence;
+    button.classList.toggle("active", selected);
+    button.setAttribute("aria-pressed", selected ? "true" : "false");
+  });
 }
 
 function suikeiSlots() {
@@ -448,6 +477,7 @@ function applyObservedManifest(manifest) {
       state.slotIndex = nextIndex >= 0 ? nextIndex : Math.max(0, state.observedSlots.length - 1);
       state.element = currentObservedSlot()?.element || state.element;
     }
+    if (state.observedLayer === "daily") normalizeObservedDailySelection();
   }
   syncTimelineFromElement();
 }
@@ -2307,17 +2337,20 @@ function syncTimelineFromElement() {
     syncSuikeiTimeline();
     return;
   }
-  const slots = state.source === "forecast" ? currentForecastSlots() : state.observedSlots;
+  const slots = state.source === "forecast" ? currentForecastSlots() : activeObservedDailySlots();
   const labels = state.source === "forecast"
     ? slots.map((slot) => slot.label)
-    : state.observedSlots.map((slot) => slot.label);
+    : slots.map((slot) => slot.label);
   const max = Math.max(0, labels.length - 1);
   const currentObservedActive = state.source === "observed" && state.element === "temp";
+  const observedFilteredIndex = state.source === "observed"
+    ? slots.findIndex((slot) => slot === currentObservedSlot() || slot.id === currentObservedSlot()?.id)
+    : -1;
   const value = state.source === "forecast"
     ? Math.min(state.slotIndex, max)
     : currentObservedActive
       ? Math.min(state.slotIndex, max)
-      : Math.max(0, Math.min(state.slotIndex, max));
+      : Math.max(0, observedFilteredIndex >= 0 ? observedFilteredIndex : max);
   const labelDates = slots.map((slot) => String(slot.valid_time || slot.target_date || "").slice(0, 10));
   const labelHours = slots.map((slot) => {
     const time = String(slot.valid_time || slot.validtime || "");
@@ -2393,9 +2426,11 @@ function setElementFromTimeline(value) {
     loadData();
     return;
   }
-  const slot = state.observedSlots[Number(value)] || state.observedSlots[0];
+  const filteredSlots = activeObservedDailySlots();
+  const slot = filteredSlots[Number(value)] || filteredSlots[0] || state.observedSlots[0];
   const previousIndex = state.slotIndex;
-  state.slotIndex = Number(value);
+  const actualIndex = state.observedSlots.findIndex((candidate) => candidate === slot || candidate.id === slot?.id);
+  state.slotIndex = actualIndex >= 0 ? actualIndex : 0;
   const nextElement = slot.element;
   if (state.element === nextElement && previousIndex === state.slotIndex) {
     syncTimelineFromElement();
@@ -3536,6 +3571,7 @@ function updateControlAvailability() {
       button.title = button.disabled ? "データ準備中" : "";
     });
   }
+  syncObservedDailySequenceControl();
   updateModeButtons();
   syncMapLayerControls();
 }
@@ -3716,7 +3752,8 @@ document.querySelectorAll(".tabs button").forEach((button) => {
       els.elementSelect.value = state.element;
     } else {
       state.observedLayer = "daily";
-      state.slotIndex = latestObservedSlotIndex("max");
+      const preferredElement = state.observedDailySequence === "min" ? "min" : "max";
+      state.slotIndex = latestObservedSlotIndex(preferredElement);
       state.element = currentObservedSlot()?.element || "max";
       els.elementSelect.value = state.element;
     }
@@ -3731,7 +3768,8 @@ els.observedLayerButtons?.addEventListener("click", (event) => {
   const previousLayer = state.observedLayer;
   state.observedLayer = button.dataset.observedLayer;
   if (state.observedLayer === "daily") {
-    state.slotIndex = latestObservedSlotIndex("max");
+    const preferredElement = state.observedDailySequence === "min" ? "min" : "max";
+    state.slotIndex = latestObservedSlotIndex(preferredElement);
     state.element = currentObservedSlot()?.element || "max";
   } else {
     state.element = state.observedLayer === "temp" ? "temp" : state.observedLayer;
@@ -3742,6 +3780,24 @@ els.observedLayerButtons?.addEventListener("click", (event) => {
   state.mode = "value";
   els.modeSelect.value = "value";
   updateControlAvailability();
+  syncTimelineFromElement();
+  loadData();
+});
+
+els.observedDailySequenceButtons?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-daily-sequence]");
+  if (!button) return;
+  const sequence = button.dataset.dailySequence;
+  if (!["both", "max", "min"].includes(sequence) || sequence === state.observedDailySequence) return;
+  const currentSlot = currentObservedSlot();
+  state.observedDailySequence = sequence;
+  if (sequence !== "both" && currentSlot?.element !== sequence) {
+    const sameDateIndex = state.observedSlots.findIndex((slot) => slot.target_date === currentSlot?.target_date && slot.element === sequence);
+    state.slotIndex = sameDateIndex >= 0 ? sameDateIndex : latestObservedSlotIndex(sequence);
+    state.element = currentObservedSlot()?.element || sequence;
+    els.elementSelect.value = state.element;
+  }
+  syncObservedDailySequenceControl();
   syncTimelineFromElement();
   loadData();
 });
@@ -3918,6 +3974,9 @@ function shareUrl() {
   if (state.source === "observed" && isSuikeiObservedLayer()) {
     url.searchParams.set("suikei", String(state.suikeiSlotIndex ?? Math.max(0, suikeiSlots().length - 1)));
   }
+  if (state.source === "observed" && state.observedLayer === "daily") {
+    url.searchParams.set("dailySequence", state.observedDailySequence);
+  }
   url.searchParams.set("mode", state.mode);
   url.searchParams.set("period", state.period);
   url.searchParams.set("labels", state.showPlaceLabels ? "1" : "0");
@@ -3965,6 +4024,8 @@ function applyUrlState() {
   const layer = params.get("layer");
   if (state.source === "forecast" && layer) state.forecastLayer = layer;
   if (state.source === "observed" && layer) state.observedLayer = layer;
+  const dailySequence = params.get("dailySequence");
+  if (["both", "max", "min"].includes(dailySequence)) state.observedDailySequence = dailySequence;
   const slot = Number(params.get("slot"));
   if (Number.isInteger(slot) && slot >= 0) state.slotIndex = slot;
   const suikeiParam = params.get("suikei");
@@ -3997,6 +4058,7 @@ async function init() {
   await loadSuikeiManifest();
   if (state.source === "observed") {
     if (state.observedLayer === "daily") {
+      normalizeObservedDailySelection();
       state.element = currentObservedSlot()?.element || "max";
     } else {
       state.element = state.observedLayer === "temp" ? "temp" : state.observedLayer;
