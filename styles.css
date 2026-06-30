@@ -645,6 +645,56 @@ select {
   background: #fff;
 }
 
+.map-layer-settings {
+  border: 1px solid #c6d0da;
+  border-radius: 5px;
+  background: #f8fafb;
+}
+
+.map-layer-settings summary {
+  padding: 8px 10px;
+  color: #344250;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.map-layer-settings-body {
+  display: grid;
+  gap: 7px;
+  padding: 0 10px 10px;
+}
+
+.subordinate-control {
+  padding-left: 18px;
+}
+
+.opacity-control {
+  display: grid;
+  grid-template-columns: minmax(82px, auto) 1fr 38px;
+  align-items: center;
+  gap: 6px;
+  color: #344250;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.opacity-control input[type="range"] {
+  min-width: 0;
+  width: 100%;
+}
+
+.opacity-control output {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.map-layer-settings input:disabled + span,
+.opacity-control input:disabled,
+.opacity-control input:disabled + output {
+  opacity: 0.45;
+}
+
 .check-row input {
   width: 18px;
   height: 18px;

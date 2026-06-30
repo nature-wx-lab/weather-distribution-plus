@@ -190,6 +190,38 @@
           <span>地名を表示</span>
         </label>
 
+        <details class="map-layer-settings" open>
+          <summary>地図表示</summary>
+          <div class="map-layer-settings-body">
+            <label class="check-row">
+              <input id="tooltipToggle" type="checkbox" checked />
+              <span>ツールチップ</span>
+            </label>
+            <label class="check-row">
+              <input id="detailMapToggle" type="checkbox" />
+              <span>詳細地図（市町村境界）</span>
+            </label>
+            <label class="check-row subordinate-control">
+              <input id="transportToggle" type="checkbox" checked disabled />
+              <span>道路・鉄道</span>
+            </label>
+            <label class="check-row">
+              <input id="terrainToggle" type="checkbox" />
+              <span>地形</span>
+            </label>
+            <label class="opacity-control">
+              <span>気象色の濃さ</span>
+              <input id="weatherOpacityRange" type="range" min="25" max="100" step="5" value="85" />
+              <output id="weatherOpacityValue">85%</output>
+            </label>
+            <label class="opacity-control subordinate-control">
+              <span>地形の濃さ</span>
+              <input id="terrainOpacityRange" type="range" min="10" max="80" step="5" value="35" disabled />
+              <output id="terrainOpacityValue">35%</output>
+            </label>
+          </div>
+        </details>
+
         <div class="toggle-row extreme-actions">
           <button id="recordMarkersButton" type="button" aria-pressed="false">気温の記録更新</button>
           <button id="rankingPanelButton" type="button" aria-pressed="false">気温のランキング</button>
@@ -281,9 +313,9 @@
     </main>
 
     <footer>
-      出典: 気象庁「天気分布予報」GeoJSON、気象庁「推計気象分布」、気象庁日別値、気象庁アメダス10分値。平均値は地点統計をIDW補間した暫定値。地図境界データ: dataofjapan/land、Natural Earth系 countries GeoJSON。
+      出典: 気象庁「天気分布予報」GeoJSON、気象庁「推計気象分布」、気象庁日別値、気象庁アメダス10分値。平均値は地点統計をIDW補間した暫定値。地図境界データ: dataofjapan/land、Natural Earth系 countries GeoJSON。詳細地図・地形: 国土地理院タイル。
     </footer>
 
-  <script src="./app.js?v=20260630-keyboard1" defer></script>
+  <script src="./app.js?v=20260630-maplayers1" defer></script>
   </body>
 </html>

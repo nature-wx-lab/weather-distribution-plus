@@ -1,7 +1,11 @@
-const DATA_ROOT = "./data/temperature_distribution_tool";
-const BOUNDARY_URL = "./data/geography_japan_prefectures.geojson";
-const WORLD_BOUNDARY_URL = "./data/geography_world_countries.geojson";
-const PLACE_LABEL_URL = "./data/station_inventory_current_temperature.csv";
+if (window.location.protocol === "file:") {
+  window.location.replace("http://localhost:8765/public/temperature-distribution/");
+}
+
+const DATA_ROOT = "../../outputs/weather/temperature_distribution_tool";
+const BOUNDARY_URL = "../../data/geography_japan_prefectures.geojson";
+const WORLD_BOUNDARY_URL = "../../data/geography_world_countries.geojson";
+const PLACE_LABEL_URL = "../../data/weather/japan_all_stations/station_inventory_current_temperature.csv";
 const TEMPERATURE_EXTREMES_URL = `${DATA_ROOT}/temperature_extremes.json`;
 const FORECAST_MANIFEST_POLL_MS = 10 * 60 * 1000;
 const OBSERVED_DATA_POLL_MS = 10 * 60 * 1000;
@@ -9,6 +13,7 @@ const SUIKEI_MANIFEST_URL = `${DATA_ROOT}/suikei_realtime_manifest.json`;
 const SUIKEI_TILE_CACHE_LIMIT = 240;
 const SUIKEI_TIMELINE_DEBOUNCE_MS = 140;
 const SUIKEI_OVERVIEW_MAX_ZOOM_RATIO = 2.2;
+const GSI_TILE_CACHE_LIMIT = 180;
 let suikeiTimelineLoadTimer = null;
 const MAX_INTERPOLATION_ELEVATION_M = 1500;
 const MAJOR_PLACE_NAMES = new Set([
@@ -50,6 +55,13 @@ const state = {
   weatherFeatures: [],
   observedDate: null,
   showPlaceLabels: true,
+  showTooltip: true,
+  showDetailMap: false,
+  showTransport: true,
+  showTerrain: false,
+  weatherOpacity: 0.85,
+  terrainOpacity: 0.35,
+  gsiTileCache: new Map(),
   placeLabels: [],
   chartStations: [],
   observedDataSignature: null,
@@ -110,6 +122,14 @@ const els = {
   periodSelect: document.getElementById("periodSelect"),
   targetSelect: document.getElementById("targetSelect"),
   placeLabelsToggle: document.getElementById("placeLabelsToggle"),
+  tooltipToggle: document.getElementById("tooltipToggle"),
+  detailMapToggle: document.getElementById("detailMapToggle"),
+  transportToggle: document.getElementById("transportToggle"),
+  terrainToggle: document.getElementById("terrainToggle"),
+  weatherOpacityRange: document.getElementById("weatherOpacityRange"),
+  weatherOpacityValue: document.getElementById("weatherOpacityValue"),
+  terrainOpacityRange: document.getElementById("terrainOpacityRange"),
+  terrainOpacityValue: document.getElementById("terrainOpacityValue"),
   statusText: document.getElementById("statusText"),
   mapTitle: document.getElementById("mapTitle"),
   mapSubtitle: document.getElementById("mapSubtitle"),
@@ -1115,7 +1135,7 @@ function drawWeatherPolygons() {
     if (level === "NoData") return;
     const style = polygonStyle(level);
     ctx.fillStyle = style.color;
-    ctx.globalAlpha = 0.9;
+    ctx.globalAlpha = 0.9 * state.weatherOpacity;
     iterGeometryLines(feature.geometry, (ring) => {
       if (!ring.length) return;
       ctx.beginPath();
@@ -1806,6 +1826,8 @@ function drawMapLegend() {
 
 function drawPoints() {
   if (currentDataType() !== "temperature" || !state.points.length) return;
+  ctx.save();
+  ctx.globalAlpha = state.weatherOpacity;
   const lons = [...new Set(state.points.map((p) => p.lon.toFixed(5)))].map(Number).sort((a, b) => a - b);
   const lats = [...new Set(state.points.map((p) => p.lat.toFixed(5)))].map(Number).sort((a, b) => a - b);
   const dLon = lons.length > 1 ? lons[1] - lons[0] : 0.0625;
@@ -1821,11 +1843,13 @@ function drawPoints() {
     if (left > els.canvas.width || left + width < 0 || top > els.canvas.height || top + height < 0) return;
     ctx.fillRect(left, top, Math.max(1, width), Math.max(1, height));
   });
+  ctx.restore();
 }
 
 function drawRealtimeStations() {
   if (state.source !== "observed") return;
   ctx.save();
+  ctx.globalAlpha = state.weatherOpacity;
   state.realtimeStations.forEach((station) => {
     const [x, y] = lonLatToPixel(Number(station.longitude), Number(station.latitude));
     if (state.observedLayer === "precip1h") {
@@ -1857,6 +1881,78 @@ function tileLon(x, z) {
 function tileLat(y, z) {
   const n = Math.PI - 2 * Math.PI * y / (2 ** z);
   return 180 / Math.PI * Math.atan(Math.sinh(n));
+}
+
+function visibleLonLatBounds() {
+  const [west, north] = pixelToLonLat(0, 0);
+  const [east, south] = pixelToLonLat(els.canvas.width, els.canvas.height);
+  return [Math.min(west, east), Math.min(south, north), Math.max(west, east), Math.max(south, north)];
+}
+
+function gsiZoomLevel() {
+  const ratio = Math.max(1, state.view.scale / (state.minScale || state.view.scale));
+  if (ratio < 1.8) return 5;
+  if (ratio < 3.2) return 6;
+  if (ratio < 5.5) return 7;
+  if (ratio < 9) return 8;
+  if (ratio < 16) return 9;
+  if (ratio < 28) return 10;
+  if (ratio < 50) return 11;
+  if (ratio < 90) return 12;
+  return 13;
+}
+
+function trimGsiTileCache() {
+  if (state.gsiTileCache.size <= GSI_TILE_CACHE_LIMIT) return;
+  for (const [url, entry] of state.gsiTileCache) {
+    if (state.gsiTileCache.size <= GSI_TILE_CACHE_LIMIT) break;
+    if (entry.status === "loading") continue;
+    state.gsiTileCache.delete(url);
+  }
+}
+
+function drawGsiTileLayer(layerId, opacity) {
+  const z = gsiZoomLevel();
+  const bounds = visibleLonLatBounds();
+  const n = 2 ** z;
+  const lonToX = (lon) => Math.floor((Number(lon) + 180) / 360 * n);
+  const latToY = (lat) => Math.floor((1 - Math.asinh(Math.tan(Number(lat) * Math.PI / 180)) / Math.PI) / 2 * n);
+  const xMin = Math.max(0, lonToX(bounds[0]) - 1);
+  const xMax = Math.min(n - 1, lonToX(bounds[2]) + 1);
+  const yMin = Math.max(0, latToY(bounds[3]) - 1);
+  const yMax = Math.min(n - 1, latToY(bounds[1]) + 1);
+  ctx.save();
+  ctx.globalAlpha = opacity;
+  ctx.imageSmoothingEnabled = true;
+  for (let x = xMin; x <= xMax; x += 1) for (let y = yMin; y <= yMax; y += 1) {
+    const [x0, y0] = lonLatToPixel(tileLon(x, z), tileLat(y, z));
+    const [x1, y1] = lonLatToPixel(tileLon(x + 1, z), tileLat(y + 1, z));
+    const left = Math.min(x0, x1), top = Math.min(y0, y1);
+    const width = Math.abs(x1 - x0) + 1, height = Math.abs(y1 - y0) + 1;
+    const url = `https://cyberjapandata.gsi.go.jp/xyz/${layerId}/${z}/${x}/${y}.png`;
+    let entry = state.gsiTileCache.get(url);
+    if (!entry) {
+      const image = new Image();
+      image.crossOrigin = "anonymous";
+      entry = { image, status: "loading" };
+      state.gsiTileCache.set(url, entry);
+      image.onload = () => { entry.status = "loaded"; trimGsiTileCache(); draw(); };
+      image.onerror = () => { entry.status = "missing"; trimGsiTileCache(); };
+      image.src = url;
+    }
+    if (entry.status === "loaded") ctx.drawImage(entry.image, left, top, width, height);
+  }
+  ctx.restore();
+}
+
+function drawDetailedBaseMap() {
+  if (!state.showDetailMap) return;
+  drawGsiTileLayer(state.showTransport ? "std" : "pale", 0.72);
+}
+
+function drawTerrainLayer() {
+  if (!state.showTerrain) return;
+  drawGsiTileLayer("relief", state.terrainOpacity);
 }
 
 function suikeiTileUrl(template, z, x, y) {
@@ -1920,6 +2016,7 @@ function drawSuikeiOverview(layer, layerKey) {
     const [x0, y0] = lonLatToPixel(Number(bounds[0]), Number(bounds[3]));
     const [x1, y1] = lonLatToPixel(Number(bounds[2]), Number(bounds[1]));
     ctx.save();
+    ctx.globalAlpha = state.weatherOpacity;
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(entry.image, Math.min(x0, x1), Math.min(y0, y1), Math.abs(x1 - x0) + 1, Math.abs(y1 - y0) + 1);
     ctx.restore();
@@ -1949,6 +2046,7 @@ function drawSuikeiTiles() {
   const yMax = Math.min(n - 1, latToY(bounds[1]));
   let loaded = 0, loading = 0, missing = 0;
   ctx.save();
+  ctx.globalAlpha = state.weatherOpacity;
   ctx.imageSmoothingEnabled = false;
   for (let x = xMin; x <= xMax; x += 1) for (let y = yMin; y <= yMax; y += 1) {
     const [x0, y0] = lonLatToPixel(tileLon(x, coordinateZoom), tileLat(y, coordinateZoom));
@@ -2294,6 +2392,8 @@ function draw() {
   ctx.fillStyle = "#e4eef5";
   ctx.fillRect(0, 0, els.canvas.width, els.canvas.height);
   drawWorldBoundaries();
+  drawDetailedBaseMap();
+  drawTerrainLayer();
   drawGrid();
   drawPoints();
   drawRealtimeStations();
@@ -2334,11 +2434,15 @@ function draw() {
   if (state.hoverPoint) {
     const [x, y] = lonLatToPixel(state.hoverPoint.lon, state.hoverPoint.lat);
     ctx.save();
-    ctx.strokeStyle = "#111";
+    ctx.strokeStyle = "rgba(17,24,32,0.92)";
     ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(x, y, 5, 0, Math.PI * 2);
-    ctx.stroke();
+    const inner = 8, outer = 13;
+    [[-outer, -outer, -inner, -outer], [-outer, -outer, -outer, -inner],
+      [outer, -outer, inner, -outer], [outer, -outer, outer, -inner],
+      [-outer, outer, -inner, outer], [-outer, outer, -outer, inner],
+      [outer, outer, inner, outer], [outer, outer, outer, inner]].forEach(([x1, y1, x2, y2]) => {
+      ctx.beginPath(); ctx.moveTo(x + x1, y + y1); ctx.lineTo(x + x2, y + y2); ctx.stroke();
+    });
     ctx.restore();
   }
   updateHeadings();
@@ -3438,7 +3542,7 @@ els.canvas.addEventListener("mousemove", (event) => {
   const [lon, lat] = pixelToLonLat(x, y);
   const point = nearestPoint(lon, lat);
   setReadout(point);
-  if (point) {
+  if (point && state.showTooltip) {
     const display = valueForPoint(point);
     els.tooltip.hidden = false;
     els.tooltip.style.left = `${event.clientX - rect.left + 14}px`;
@@ -3706,6 +3810,30 @@ els.placeLabelsToggle.addEventListener("change", () => {
   draw();
 });
 
+function syncMapLayerControls() {
+  els.tooltipToggle.checked = state.showTooltip;
+  els.detailMapToggle.checked = state.showDetailMap;
+  els.transportToggle.checked = state.showTransport;
+  els.transportToggle.disabled = !state.showDetailMap;
+  els.terrainToggle.checked = state.showTerrain;
+  els.weatherOpacityRange.value = String(Math.round(state.weatherOpacity * 100));
+  els.weatherOpacityValue.value = `${Math.round(state.weatherOpacity * 100)}%`;
+  els.terrainOpacityRange.value = String(Math.round(state.terrainOpacity * 100));
+  els.terrainOpacityValue.value = `${Math.round(state.terrainOpacity * 100)}%`;
+  els.terrainOpacityRange.disabled = !state.showTerrain;
+}
+
+els.tooltipToggle.addEventListener("change", () => {
+  state.showTooltip = els.tooltipToggle.checked;
+  if (!state.showTooltip) els.tooltip.hidden = true;
+  draw();
+});
+els.detailMapToggle.addEventListener("change", () => { state.showDetailMap = els.detailMapToggle.checked; syncMapLayerControls(); draw(); });
+els.transportToggle.addEventListener("change", () => { state.showTransport = els.transportToggle.checked; draw(); });
+els.terrainToggle.addEventListener("change", () => { state.showTerrain = els.terrainToggle.checked; syncMapLayerControls(); draw(); });
+els.weatherOpacityRange.addEventListener("input", () => { state.weatherOpacity = Number(els.weatherOpacityRange.value) / 100; syncMapLayerControls(); draw(); });
+els.terrainOpacityRange.addEventListener("input", () => { state.terrainOpacity = Number(els.terrainOpacityRange.value) / 100; syncMapLayerControls(); draw(); });
+
 els.recordMarkersButton?.addEventListener("click", () => {
   if (els.recordMarkersButton.disabled) return;
   state.showRecordMarkers = !state.showRecordMarkers;
@@ -3754,6 +3882,12 @@ function shareUrl() {
   url.searchParams.set("mode", state.mode);
   url.searchParams.set("period", state.period);
   url.searchParams.set("labels", state.showPlaceLabels ? "1" : "0");
+  url.searchParams.set("tooltip", state.showTooltip ? "1" : "0");
+  url.searchParams.set("detail", state.showDetailMap ? "1" : "0");
+  url.searchParams.set("transport", state.showTransport ? "1" : "0");
+  url.searchParams.set("terrain", state.showTerrain ? "1" : "0");
+  url.searchParams.set("weatherOpacity", String(Math.round(state.weatherOpacity * 100)));
+  url.searchParams.set("terrainOpacity", String(Math.round(state.terrainOpacity * 100)));
   return url.toString();
 }
 
@@ -3802,6 +3936,14 @@ function applyUrlState() {
   const period = params.get("period");
   if (["normal", "30", "20", "10", "5", "3"].includes(period)) state.period = period;
   if (params.get("labels") === "0") state.showPlaceLabels = false;
+  if (params.get("tooltip") === "0") state.showTooltip = false;
+  if (params.get("detail") === "1") state.showDetailMap = true;
+  if (params.get("transport") === "0") state.showTransport = false;
+  if (params.get("terrain") === "1") state.showTerrain = true;
+  const weatherOpacity = Number(params.get("weatherOpacity"));
+  if (Number.isFinite(weatherOpacity) && weatherOpacity >= 25 && weatherOpacity <= 100) state.weatherOpacity = weatherOpacity / 100;
+  const terrainOpacity = Number(params.get("terrainOpacity"));
+  if (Number.isFinite(terrainOpacity) && terrainOpacity >= 10 && terrainOpacity <= 80) state.terrainOpacity = terrainOpacity / 100;
 }
 
 window.addEventListener("resize", () => {
@@ -3826,6 +3968,7 @@ async function init() {
   els.modeSelect.value = state.mode;
   els.periodSelect.value = state.period;
   els.placeLabelsToggle.checked = state.showPlaceLabels;
+  syncMapLayerControls();
   syncTimelineFromElement();
   await loadData();
   window.setInterval(checkForecastManifestUpdate, FORECAST_MANIFEST_POLL_MS);
