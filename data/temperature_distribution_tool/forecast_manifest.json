@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-30T13:52:04+09:00",
+  "generated_at": "2026-06-30T14:02:21+09:00",
   "source": "JMA天気分布予報 targetTimes.json / *_temp_point / wm / r3 / s3 GeoJSON / VPFD地域時系列予報",
   "service_date": "2026-06-30",
   "daily_rollover_hour_jst": 6,
@@ -20,8 +20,8 @@
       "target_date": "2026-06-30",
       "basetime": "20260630020000",
       "validtime": "20260630090000",
-      "status": "available",
-      "message": "",
+      "status": "stale",
+      "message": "予測対象時刻を過ぎているため、実況の最高気温を参照ください。",
       "previous_comparison_source": "observed_daily",
       "previous_comparison_date": "2026-06-29"
     },
@@ -46,7 +46,7 @@
       "validtime": "20260701090000",
       "status": "available",
       "message": "",
-      "previous_comparison_source": "forecast",
+      "previous_comparison_source": "observed_realtime",
       "previous_comparison_date": "2026-06-30"
     }
   ],
@@ -74,8 +74,8 @@
           "target_date": "2026-06-30",
           "basetime": "20260630020000",
           "validtime": "20260630090000",
-          "status": "available",
-          "message": "",
+          "status": "stale",
+          "message": "予測対象時刻を過ぎているため、実況の最高気温を参照ください。",
           "previous_comparison_source": "observed_daily",
           "previous_comparison_date": "2026-06-29"
         },
@@ -100,7 +100,7 @@
           "validtime": "20260701090000",
           "status": "available",
           "message": "",
-          "previous_comparison_source": "forecast",
+          "previous_comparison_source": "observed_realtime",
           "previous_comparison_date": "2026-06-30"
         }
       ]
