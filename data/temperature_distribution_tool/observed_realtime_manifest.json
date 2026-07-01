@@ -1,6 +1,6 @@
 {
   "generator_version": 4,
-  "generated_at": "2026-07-02T03:28:58.676791+09:00",
+  "generated_at": "2026-07-02T03:35:12.500131+09:00",
   "latest_time": "2026-07-02T03:20:00+09:00",
   "source": "JMA AMeDAS latest_time.txt / data/map/{YYYYMMDDHHMM00}.json 10-minute observations",
   "realtime_layers": {
