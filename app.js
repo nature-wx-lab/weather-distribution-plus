@@ -106,6 +106,12 @@ const state = {
   rankingPanelPosition: null,
   rankingPanelDragging: false,
   rankingPanelDragStart: null,
+  rankingPanelScale: 1,
+  pointChartPanelPosition: null,
+  pointChartPanelDragging: false,
+  pointChartPanelDragStart: null,
+  pointChartPanelScale: 1,
+  panelResizeStart: null,
   bounds: [122, 146.5, 23.4, 46.2],
   view: null,
   minScale: null,
@@ -1762,7 +1768,9 @@ function updateRankingPanel() {
   if (els.rankingPanel.hidden) return;
   applyRankingPanelPosition();
   if (!day) {
-    els.rankingPanel.innerHTML = `<div class="ranking-head"><strong>${recordPanelOpen ? "記録更新" : "気温ランキング"}</strong></div><p class="ranking-empty">データを読み込めません。</p>`;
+    els.rankingPanel.innerHTML = `<div class="ranking-head"><strong>${recordPanelOpen ? "記録更新" : "気温ランキング"}</strong></div><p class="ranking-empty">データを読み込めません。</p><div class="panel-resize-handle" data-panel-resize="ranking" role="separator" aria-label="パネルの大きさを変更"></div>`;
+    applyPanelScale(els.rankingPanel, state.rankingPanelScale);
+    wirePanelResize(els.rankingPanel, "ranking");
     return;
   }
   const status = rankingStatusInfo(day);
@@ -1773,8 +1781,11 @@ function updateRankingPanel() {
         <div><div class="ranking-title-row"><strong>${escapeHtml(day.label || day.date)} ${elementName}の記録更新</strong><span class="ranking-status ${status.className}"><b>${status.label}</b><span>${status.text}</span></span></div><span>気象庁「観測史上1位の値 更新状況」</span></div>
         <button type="button" id="rankingPanelCloseButton" aria-label="閉じる">×</button>
       </div>
-      <div class="record-grid">${renderRecordList(day, "all_time")}${renderRecordList(day, "monthly")}</div>`;
+      <div class="record-grid">${renderRecordList(day, "all_time")}${renderRecordList(day, "monthly")}</div>
+      <div class="panel-resize-handle" data-panel-resize="ranking" role="separator" aria-label="パネルの大きさを変更"></div>`;
+    applyPanelScale(els.rankingPanel, state.rankingPanelScale);
     wireRankingPanelDrag();
+    wirePanelResize(els.rankingPanel, "ranking");
     document.getElementById("rankingPanelCloseButton")?.addEventListener("click", () => {
       state.showRecordMarkers = false;
       updateRankingPanel();
@@ -1808,8 +1819,11 @@ function updateRankingPanel() {
         </div>
       </section>` : ""}
     </div>
+    <div class="panel-resize-handle" data-panel-resize="ranking" role="separator" aria-label="パネルの大きさを変更"></div>
   `;
+  applyPanelScale(els.rankingPanel, state.rankingPanelScale);
   wireRankingPanelDrag();
+  wirePanelResize(els.rankingPanel, "ranking");
   document.getElementById("rankingPanelCloseButton")?.addEventListener("click", () => {
     state.showRankingPanel = false;
     updateRankingPanel();
@@ -1845,6 +1859,103 @@ function applyRankingPanelPosition() {
   state.rankingPanelPosition = position;
   els.rankingPanel.style.left = `${position.left}px`;
   els.rankingPanel.style.top = `${position.top}px`;
+}
+
+function applyPanelScale(panel, scale) {
+  if (!panel) return;
+  panel.style.setProperty("--panel-scale", String(scale));
+}
+
+function wirePanelResize(panel, kind) {
+  const handle = panel?.querySelector(`[data-panel-resize="${kind}"]`);
+  if (!handle || handle.dataset.wired === "1") return;
+  handle.dataset.wired = "1";
+}
+
+document.addEventListener("pointerdown", (event) => {
+  const handle = event.target.closest?.("[data-panel-resize]");
+  if (!handle) return;
+  const kind = handle.dataset.panelResize;
+  const panel = kind === "ranking" ? els.rankingPanel : els.pointChartPanel;
+  if (!panel) return;
+  event.preventDefault();
+  event.stopPropagation();
+  const rect = panel.getBoundingClientRect();
+  state.panelResizeStart = { kind, panel, x: event.clientX, y: event.clientY, scale: kind === "ranking" ? state.rankingPanelScale : state.pointChartPanelScale, width: rect.width, height: rect.height };
+  panel.classList.add("resizing");
+});
+
+window.addEventListener("pointermove", (event) => {
+  const start = state.panelResizeStart;
+  if (!start) return;
+  const dx = event.clientX - start.x;
+  const dy = event.clientY - start.y;
+  const ratio = Math.max((start.width + dx) / start.width, (start.height + dy) / start.height);
+  const scale = Math.max(0.65, Math.min(1.45, start.scale * ratio));
+  if (start.kind === "ranking") state.rankingPanelScale = scale;
+  else state.pointChartPanelScale = scale;
+  applyPanelScale(start.panel, scale);
+  if (start.kind === "ranking") applyRankingPanelPosition();
+  else applyPointChartPanelPosition();
+});
+
+window.addEventListener("pointerup", () => {
+  if (!state.panelResizeStart) return;
+  state.panelResizeStart.panel.classList.remove("resizing");
+  state.panelResizeStart = null;
+});
+
+function defaultPointChartPanelPosition() {
+  const wrapRect = els.canvasWrap?.getBoundingClientRect();
+  const panelRect = els.pointChartPanel?.getBoundingClientRect();
+  return {
+    left: Math.max(12, (wrapRect?.width || window.innerWidth) - (panelRect?.width || 500) - 14),
+    top: Math.max(12, (wrapRect?.height || window.innerHeight) - (panelRect?.height || 340) - 14),
+  };
+}
+
+function clampPointChartPanelPosition(position) {
+  const wrapRect = els.canvasWrap?.getBoundingClientRect();
+  const panelRect = els.pointChartPanel?.getBoundingClientRect();
+  return {
+    left: Math.max(8, Math.min((wrapRect?.width || window.innerWidth) - (panelRect?.width || 500) - 8, position.left)),
+    top: Math.max(8, Math.min((wrapRect?.height || window.innerHeight) - (panelRect?.height || 340) - 8, position.top)),
+  };
+}
+
+function applyPointChartPanelPosition() {
+  if (!els.pointChartPanel) return;
+  if (!state.pointChartPanelPosition) state.pointChartPanelPosition = defaultPointChartPanelPosition();
+  state.pointChartPanelPosition = clampPointChartPanelPosition(state.pointChartPanelPosition);
+  els.pointChartPanel.style.left = `${state.pointChartPanelPosition.left}px`;
+  els.pointChartPanel.style.top = `${state.pointChartPanelPosition.top}px`;
+}
+
+function wirePointChartPanelDrag() {
+  const head = els.pointChartPanel?.querySelector(".point-chart-head");
+  if (!head || head.dataset.dragWired === "1") return;
+  head.dataset.dragWired = "1";
+  document.addEventListener("pointerdown", (event) => {
+    if (!event.target.closest?.(".point-chart-head") || event.target.closest("button")) return;
+    const current = state.pointChartPanelPosition || defaultPointChartPanelPosition();
+    state.pointChartPanelDragging = true;
+    state.pointChartPanelDragStart = { x: event.clientX, y: event.clientY, left: current.left, top: current.top };
+    els.pointChartPanel.classList.add("dragging");
+  });
+  window.addEventListener("pointermove", (event) => {
+    if (!state.pointChartPanelDragging || !state.pointChartPanelDragStart || state.panelResizeStart) return;
+    state.pointChartPanelPosition = clampPointChartPanelPosition({
+      left: state.pointChartPanelDragStart.left + event.clientX - state.pointChartPanelDragStart.x,
+      top: state.pointChartPanelDragStart.top + event.clientY - state.pointChartPanelDragStart.y,
+    });
+    applyPointChartPanelPosition();
+  });
+  window.addEventListener("pointerup", () => {
+    if (!state.pointChartPanelDragging) return;
+    state.pointChartPanelDragging = false;
+    state.pointChartPanelDragStart = null;
+    els.pointChartPanel.classList.remove("dragging");
+  });
 }
 
 function wireRankingPanelDrag() {
@@ -3819,6 +3930,8 @@ async function openPointChart(point) {
   if (!point || !els.pointChartPanel) return;
   state.selectedPoint = point;
   els.pointChartPanel.hidden = false;
+  applyPanelScale(els.pointChartPanel, state.pointChartPanelScale);
+  applyPointChartPanelPosition();
   const location = pointLocationLabel(point);
   const chartTitle = state.pointChartSource === "forecast"
     ? "3時間ごとの気温予測"
@@ -4463,6 +4576,8 @@ window.addEventListener("resize", () => {
 
 async function init() {
   applyUrlState();
+  wirePointChartPanelDrag();
+  wirePanelResize(els.pointChartPanel, "point");
   const weatherMapManifestPromise = loadWeatherMapManifest();
   await Promise.all([loadBoundaries(), loadPlaceLabels(), loadTemperatureExtremes()]);
   await Promise.all([loadForecastManifest(), loadObservedManifest()]);

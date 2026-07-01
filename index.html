@@ -185,6 +185,17 @@
           <button id="rankingPanelButton" type="button" aria-pressed="false">気温ランキング</button>
         </div>
 
+        <div class="map-display-quick">
+          <label class="check-row">
+            <input id="placeLabelsToggle" type="checkbox" checked />
+            <span>地名を表示</span>
+          </label>
+          <label class="check-row">
+            <input id="tooltipToggle" type="checkbox" checked />
+            <span>ツールチップ</span>
+          </label>
+        </div>
+
         <label class="visually-hidden">
           <span>対象</span>
           <select id="targetSelect">
@@ -221,17 +232,6 @@
             </div>
           </div>
         </details>
-
-        <div class="map-display-quick">
-          <label class="check-row">
-            <input id="placeLabelsToggle" type="checkbox" checked />
-            <span>地名を表示</span>
-          </label>
-          <label class="check-row">
-            <input id="tooltipToggle" type="checkbox" checked />
-            <span>ツールチップ</span>
-          </label>
-        </div>
 
         <details class="map-layer-settings" open>
           <summary>地図を表示</summary>
@@ -355,6 +355,7 @@
             <canvas id="pointChartCanvas" width="560" height="250"></canvas>
             <div id="pointChartTooltip" class="point-chart-tooltip" hidden></div>
             <div id="pointChartLegend" class="point-chart-legend"></div>
+            <div class="panel-resize-handle" data-panel-resize="point" role="separator" aria-label="グラフの大きさを変更"></div>
           </section>
         </div>
       </section>
