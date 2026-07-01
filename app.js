@@ -487,8 +487,8 @@ function applyObservedManifest(manifest) {
     temp: realtime.temp || { available: true },
     precip1h: realtime.precip1h || (elements.precipitation_1h ? { available: true } : null),
     wind: realtime.wind || (elements.wind_speed || elements.wind_direction ? { available: true } : null),
-    weather: realtime.weather || null,
-    sunshine: realtime.sunshine || null,
+    weather: realtime.weather || (currentSuikeiSlot()?.layers?.weather?.tile_template ? { available: true } : null),
+    sunshine: realtime.sunshine || (currentSuikeiSlot()?.layers?.sunshine?.tile_template ? { available: true } : null),
   };
   state.realtimeStationMeta = station;
   if (["precip1h", "wind"].includes(state.observedLayer) && !state.observedRealtimeLayers[state.observedLayer]?.available) {
@@ -505,6 +505,7 @@ function applyObservedManifest(manifest) {
     if (state.observedLayer === "daily") normalizeObservedDailySelection();
   }
   syncTimelineFromElement();
+  updateControlAvailability();
 }
 
 function parseCsv(text) {
@@ -622,18 +623,23 @@ function weatherMapFileName() {
   return files[Math.min(state.weatherMapNowIndex, files.length - 1)] || files[files.length - 1];
 }
 
-function weatherMapTimeLabel(fileName) {
+function weatherMapValidDate(fileName, kind = state.weatherMapKind) {
   const match = String(fileName).match(/_(\d{14})_MET_/);
-  if (!match) return "";
+  if (!match) return null;
   const value = match[1];
-  return `${Number(value.slice(0, 4))}年${Number(value.slice(4, 6))}月${Number(value.slice(6, 8))}日${Number(value.slice(8, 10))}時`;
+  const leadHours = kind === "ft24" ? 24 : kind === "ft48" ? 48 : 0;
+  return new Date(Date.UTC(Number(value.slice(0, 4)), Number(value.slice(4, 6)) - 1,
+    Number(value.slice(6, 8)), Number(value.slice(8, 10)) + 9 + leadHours));
+}
+
+function weatherMapTimeLabel(fileName, kind = state.weatherMapKind) {
+  const date = weatherMapValidDate(fileName, kind);
+  return date ? `${date.getUTCFullYear()}年${date.getUTCMonth() + 1}月${date.getUTCDate()}日${date.getUTCHours()}時` : "";
 }
 
 function weatherMapTimeLabelNoYear(fileName) {
-  const match = String(fileName).match(/_(\d{14})_MET_/);
-  if (!match) return "";
-  const value = match[1];
-  return `${Number(value.slice(4, 6))}月${Number(value.slice(6, 8))}日${Number(value.slice(8, 10))}時`;
+  const date = weatherMapValidDate(fileName);
+  return date ? `${date.getUTCMonth() + 1}月${date.getUTCDate()}日${date.getUTCHours()}時` : "";
 }
 
 function syncWeatherMapTimeOptions() {
@@ -651,7 +657,7 @@ function syncWeatherMapTimeOptions() {
   [...recentFiles].reverse().forEach(({ fileName, originalIndex }) => {
     const option = document.createElement("option");
     option.value = String(originalIndex);
-    option.textContent = weatherMapTimeLabel(fileName);
+    option.textContent = weatherMapTimeLabel(fileName, "now");
     els.weatherMapTimeSelect.append(option);
   });
   const latestIndex = Math.max(0, files.length - 1);
@@ -2105,16 +2111,22 @@ function drawWeatherMapMetadata(legendBounds) {
   ctx.fillRect(left + 14, top + 14, 5, 34);
   ctx.fillStyle = "#202932";
   ctx.font = "900 21px -apple-system, BlinkMacSystemFont, sans-serif";
-  const title = state.weatherMapKind === "now" ? "実況天気図" : `${weatherMapKindLabel(true)}天気図`;
-  ctx.fillText(title, left + 30, top + 39);
+  if (state.weatherMapKind === "now") {
+    ctx.fillText("実況天気図", left + 30, top + 39);
+  } else {
+    ctx.fillText("予想天気図", left + 30, top + 35);
+    ctx.fillStyle = "#78654e";
+    ctx.font = "800 15px -apple-system, BlinkMacSystemFont, sans-serif";
+    ctx.fillText(state.weatherMapKind === "ft24" ? "24時間後" : "48時間後", left + 30, top + 53);
+  }
   ctx.strokeStyle = "rgba(105,116,127,0.3)";
-  ctx.beginPath(); ctx.moveTo(left + 14, top + 58); ctx.lineTo(left + width - 14, top + 58); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(left + 14, top + 64); ctx.lineTo(left + width - 14, top + 64); ctx.stroke();
   ctx.fillStyle = "#65717d";
   ctx.font = "800 15px -apple-system, BlinkMacSystemFont, sans-serif";
-  ctx.fillText("対象", left + 16, top + 88);
+  ctx.fillText("対象", left + 16, top + 94);
   ctx.fillStyle = "#202932";
   ctx.font = "900 18px -apple-system, BlinkMacSystemFont, sans-serif";
-  ctx.fillText(weatherMapTimeLabelNoYear(fileName), left + 58, top + 89);
+  ctx.fillText(weatherMapTimeLabelNoYear(fileName), left + 58, top + 95);
   ctx.restore();
 }
 
