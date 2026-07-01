@@ -635,7 +635,7 @@ select {
 }
 
 .share-actions {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(68px, 0.82fr) minmax(104px, 1.35fr) minmax(60px, 0.72fr);
 }
 
 .share-actions button {

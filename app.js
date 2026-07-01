@@ -9,6 +9,12 @@ const SUIKEI_MANIFEST_URL = `${DATA_ROOT}/suikei_realtime_manifest.json`;
 const JMA_WEATHER_MAP_LIST_URL = "https://www.jma.go.jp/bosai/weather_map/data/list.json";
 const JMA_WEATHER_MAP_IMAGE_ROOT = "https://www.jma.go.jp/bosai/weather_map/data/png";
 const WEATHER_MAP_BOUNDS = [100, 170, 10, 60];
+const WEATHER_MAP_SOURCE_PROJECTION = {
+  centerX: 343.73563696,
+  centerY: -295.45817118,
+  scale: 1114.79637664,
+  centralLongitude: 140,
+};
 const SUIKEI_TILE_CACHE_LIMIT = 240;
 const SUIKEI_TIMELINE_DEBOUNCE_MS = 140;
 const SUIKEI_OVERVIEW_MAX_ZOOM_RATIO = 2.2;
@@ -96,6 +102,7 @@ const state = {
   bounds: [122, 146.5, 23.4, 46.2],
   view: null,
   minScale: null,
+  zoomOutMinScale: null,
   dragging: false,
   dragStart: null,
   dragMoved: false,
@@ -923,6 +930,13 @@ function fitView() {
   const scaleY = els.canvas.height / (yMax - yMin);
   const scale = Math.min(scaleX, scaleY) * 0.97;
   state.minScale = scale;
+  const [weatherWest, weatherEast, weatherSouth, weatherNorth] = WEATHER_MAP_BOUNDS;
+  const [weatherX0, weatherY0] = project(weatherWest, weatherSouth);
+  const [weatherX1, weatherY1] = project(weatherEast, weatherNorth);
+  state.zoomOutMinScale = Math.min(
+    els.canvas.width / Math.abs(weatherX1 - weatherX0),
+    els.canvas.height / Math.abs(weatherY1 - weatherY0),
+  ) * 0.94;
   state.view = {
     centerX: (xMin + xMax) / 2,
     centerY: (yMin + yMax) / 2,
@@ -955,7 +969,7 @@ function zoomAt(canvasX, canvasY, factor) {
   ensureView();
   const before = pixelToLonLat(canvasX, canvasY);
   const [beforeX, beforeY] = project(before[0], before[1]);
-  state.view.scale = Math.max(state.minScale || 12, Math.min(MAX_MAP_SCALE, state.view.scale * factor));
+  state.view.scale = Math.max(state.zoomOutMinScale || state.minScale || 12, Math.min(MAX_MAP_SCALE, state.view.scale * factor));
   state.view.centerX = beforeX - (canvasX - els.canvas.width / 2) / state.view.scale;
   state.view.centerY = beforeY + (canvasY - els.canvas.height / 2) / state.view.scale;
   clampView();
@@ -964,7 +978,7 @@ function zoomAt(canvasX, canvasY, factor) {
 
 function updateZoomControl() {
   if (!els.zoomThumb || !state.view || !state.minScale) return;
-  const min = state.minScale;
+  const min = state.zoomOutMinScale || state.minScale;
   const max = MAX_MAP_SCALE;
   const ratio = Math.max(0, Math.min(1, Math.log(state.view.scale / min) / Math.log(max / min)));
   const top = 92 - ratio * 80;
@@ -981,7 +995,15 @@ function panBy(dx, dy) {
 
 function clampView() {
   ensureView();
-  const [xMin, xMax, yMin, yMax] = fullProjectedBounds();
+  const useWeatherBounds = state.view.scale < (state.minScale || state.view.scale) * 0.98;
+  const [xMin, xMax, yMin, yMax] = useWeatherBounds
+    ? (() => {
+      const [west, east, south, north] = WEATHER_MAP_BOUNDS;
+      const [x0, y0] = project(west, south);
+      const [x1, y1] = project(east, north);
+      return [Math.min(x0, x1), Math.max(x0, x1), Math.min(y0, y1), Math.max(y0, y1)];
+    })()
+    : fullProjectedBounds();
   const halfW = els.canvas.width / (2 * state.view.scale);
   const halfH = els.canvas.height / (2 * state.view.scale);
   const zoomRatio = Math.max(1, state.view.scale / (state.minScale || state.view.scale));
@@ -2373,15 +2395,68 @@ function drawPolygonValueLabels() {
   });
 }
 
+function weatherMapSourcePixel(lon, lat) {
+  const projection = WEATHER_MAP_SOURCE_PROJECTION;
+  const latitudeRadians = lat * Math.PI / 180;
+  const longitudeRadians = (lon - projection.centralLongitude) * Math.PI / 180;
+  const radius = projection.scale / Math.tan(Math.PI / 4 + latitudeRadians / 2);
+  return [
+    projection.centerX + radius * Math.sin(longitudeRadians),
+    projection.centerY + radius * Math.cos(longitudeRadians),
+  ];
+}
+
+function drawImageTriangle(image, source, destination) {
+  const [[sx0, sy0], [sx1, sy1], [sx2, sy2]] = source;
+  const [[dx0, dy0], [dx1, dy1], [dx2, dy2]] = destination;
+  const denominator = sx0 * (sy1 - sy2) + sx1 * (sy2 - sy0) + sx2 * (sy0 - sy1);
+  if (Math.abs(denominator) < 0.0001) return;
+  const a = (dx0 * (sy1 - sy2) + dx1 * (sy2 - sy0) + dx2 * (sy0 - sy1)) / denominator;
+  const c = (dx0 * (sx2 - sx1) + dx1 * (sx0 - sx2) + dx2 * (sx1 - sx0)) / denominator;
+  const e = (dx0 * (sx1 * sy2 - sx2 * sy1) + dx1 * (sx2 * sy0 - sx0 * sy2) + dx2 * (sx0 * sy1 - sx1 * sy0)) / denominator;
+  const b = (dy0 * (sy1 - sy2) + dy1 * (sy2 - sy0) + dy2 * (sy0 - sy1)) / denominator;
+  const d = (dy0 * (sx2 - sx1) + dy1 * (sx0 - sx2) + dy2 * (sx1 - sx0)) / denominator;
+  const f = (dy0 * (sx1 * sy2 - sx2 * sy1) + dy1 * (sx2 * sy0 - sx0 * sy2) + dy2 * (sx0 * sy1 - sx1 * sy0)) / denominator;
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(dx0, dy0);
+  ctx.lineTo(dx1, dy1);
+  ctx.lineTo(dx2, dy2);
+  ctx.closePath();
+  ctx.clip();
+  ctx.transform(a, b, c, d, e, f);
+  ctx.drawImage(image, 0, 0);
+  ctx.restore();
+}
+
 function drawWeatherMapOverlay() {
   if (!state.showWeatherMap || !state.weatherMapImage) return;
   const [west, east, south, north] = WEATHER_MAP_BOUNDS;
-  const [x0, y0] = lonLatToPixel(west, north);
-  const [x1, y1] = lonLatToPixel(east, south);
+  const longitudeStep = 5;
+  const latitudeStep = 5;
   ctx.save();
   ctx.globalAlpha = state.weatherMapOpacity;
   ctx.imageSmoothingEnabled = true;
-  ctx.drawImage(state.weatherMapImage, x0, y0, x1 - x0, y1 - y0);
+  for (let lat = south; lat < north; lat += latitudeStep) {
+    for (let lon = west; lon < east; lon += longitudeStep) {
+      const nextLon = Math.min(east, lon + longitudeStep);
+      const nextLat = Math.min(north, lat + latitudeStep);
+      const sourceNorthWest = weatherMapSourcePixel(lon, nextLat);
+      const sourceNorthEast = weatherMapSourcePixel(nextLon, nextLat);
+      const sourceSouthWest = weatherMapSourcePixel(lon, lat);
+      const sourceSouthEast = weatherMapSourcePixel(nextLon, lat);
+      const destinationNorthWest = lonLatToPixel(lon, nextLat);
+      const destinationNorthEast = lonLatToPixel(nextLon, nextLat);
+      const destinationSouthWest = lonLatToPixel(lon, lat);
+      const destinationSouthEast = lonLatToPixel(nextLon, lat);
+      drawImageTriangle(state.weatherMapImage,
+        [sourceNorthWest, sourceNorthEast, sourceSouthWest],
+        [destinationNorthWest, destinationNorthEast, destinationSouthWest]);
+      drawImageTriangle(state.weatherMapImage,
+        [sourceNorthEast, sourceSouthEast, sourceSouthWest],
+        [destinationNorthEast, destinationSouthEast, destinationSouthWest]);
+    }
+  }
   ctx.restore();
 }
 
