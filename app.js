@@ -685,7 +685,7 @@ function syncWeatherMapControls() {
 
 async function loadWeatherMapManifest() {
   try {
-    const response = await fetch(JMA_WEATHER_MAP_LIST_URL, { cache: "no-store" });
+    const response = await fetch(`${JMA_WEATHER_MAP_LIST_URL}?_=${Date.now()}`, { cache: "no-store" });
     if (!response.ok) throw new Error(String(response.status));
     state.weatherMapManifest = await response.json();
   } catch {
@@ -2092,7 +2092,7 @@ function drawWeatherMapMetadata(legendBounds) {
   const fileName = weatherMapFileName();
   if (!state.showWeatherMap || !fileName || !legendBounds) return;
   const width = legendBounds.width;
-  const height = 92;
+  const height = 112;
   const left = legendBounds.left;
   const top = Math.min(els.canvas.height - height - 24, legendBounds.top + legendBounds.height + 14);
   ctx.save();
@@ -2101,11 +2101,20 @@ function drawWeatherMapMetadata(legendBounds) {
   ctx.lineWidth = 1;
   ctx.fillRect(left, top, width, height);
   ctx.strokeRect(left, top, width, height);
+  ctx.fillStyle = state.weatherMapKind === "now" ? "#2d7658" : "#9a6415";
+  ctx.fillRect(left + 14, top + 14, 5, 34);
   ctx.fillStyle = "#202932";
-  ctx.font = "900 20px -apple-system, BlinkMacSystemFont, sans-serif";
-  ctx.fillText(`天気図：${state.weatherMapKind === "now" ? "実況" : "予想"}`, left + 16, top + 32);
-  ctx.font = "800 16px -apple-system, BlinkMacSystemFont, sans-serif";
-  ctx.fillText(`${weatherMapTimeLabelNoYear(fileName)}対象`, left + 16, top + 66);
+  ctx.font = "900 21px -apple-system, BlinkMacSystemFont, sans-serif";
+  const title = state.weatherMapKind === "now" ? "実況天気図" : `${weatherMapKindLabel(true)}天気図`;
+  ctx.fillText(title, left + 30, top + 39);
+  ctx.strokeStyle = "rgba(105,116,127,0.3)";
+  ctx.beginPath(); ctx.moveTo(left + 14, top + 58); ctx.lineTo(left + width - 14, top + 58); ctx.stroke();
+  ctx.fillStyle = "#65717d";
+  ctx.font = "800 15px -apple-system, BlinkMacSystemFont, sans-serif";
+  ctx.fillText("対象", left + 16, top + 88);
+  ctx.fillStyle = "#202932";
+  ctx.font = "900 18px -apple-system, BlinkMacSystemFont, sans-serif";
+  ctx.fillText(weatherMapTimeLabelNoYear(fileName), left + 58, top + 89);
   ctx.restore();
 }
 
@@ -4423,7 +4432,7 @@ async function init() {
   }
   window.setInterval(checkForecastManifestUpdate, FORECAST_MANIFEST_POLL_MS);
   window.setInterval(checkObservedDataUpdate, OBSERVED_DATA_POLL_MS);
-  window.setInterval(checkWeatherMapUpdate, 10 * 60 * 1000);
+  window.setInterval(checkWeatherMapUpdate, 2 * 60 * 1000);
 }
 
 init();
