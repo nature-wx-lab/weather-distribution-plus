@@ -65,6 +65,7 @@ const state = {
   showPlaceLabels: true,
   showTooltip: true,
   showDetailMap: false,
+  detailMapOpacity: 0.7,
   showTerrain: false,
   terrainStyle: "color",
   weatherOpacity: 0.85,
@@ -143,6 +144,8 @@ const els = {
   placeLabelsToggle: document.getElementById("placeLabelsToggle"),
   tooltipToggle: document.getElementById("tooltipToggle"),
   detailMapToggle: document.getElementById("detailMapToggle"),
+  detailMapOpacityRange: document.getElementById("detailMapOpacityRange"),
+  detailMapOpacityValue: document.getElementById("detailMapOpacityValue"),
   terrainToggle: document.getElementById("terrainToggle"),
   terrainStyleSelect: document.getElementById("terrainStyleSelect"),
   weatherOpacityRange: document.getElementById("weatherOpacityRange"),
@@ -685,7 +688,7 @@ function syncWeatherMapControls() {
   els.weatherMapStatus.textContent = state.weatherMapLoading
     ? `${kindLabel}を読み込み中…`
     : fileName
-      ? `気象庁 ${kindLabel}（${weatherMapTimeLabel(fileName)}）を試験投影中`
+      ? `気象庁 ${kindLabel}（${weatherMapTimeLabel(fileName)}）を投影中`
       : `${kindLabel}を取得できませんでした`;
 }
 
@@ -2256,7 +2259,7 @@ function drawGsiTileLayer(layerId, opacity) {
 
 function drawDetailedBaseMap() {
   if (!state.showDetailMap) return;
-  drawGsiTileLayer("std", 0.72);
+  drawGsiTileLayer("std", state.detailMapOpacity);
 }
 
 function drawTerrainLayer() {
@@ -4241,6 +4244,9 @@ els.placeLabelsToggle.addEventListener("change", () => {
 function syncMapLayerControls() {
   els.tooltipToggle.checked = state.showTooltip;
   els.detailMapToggle.checked = state.showDetailMap;
+  els.detailMapOpacityRange.value = String(Math.round(state.detailMapOpacity * 100));
+  els.detailMapOpacityValue.value = `${Math.round(state.detailMapOpacity * 100)}%`;
+  els.detailMapOpacityRange.disabled = !state.showDetailMap;
   els.terrainToggle.checked = state.showTerrain;
   els.terrainStyleSelect.value = state.terrainStyle;
   els.terrainStyleSelect.disabled = !state.showTerrain;
@@ -4258,6 +4264,7 @@ els.tooltipToggle.addEventListener("change", () => {
   draw();
 });
 els.detailMapToggle.addEventListener("change", () => { state.showDetailMap = els.detailMapToggle.checked; syncMapLayerControls(); draw(); });
+els.detailMapOpacityRange.addEventListener("input", () => { state.detailMapOpacity = Number(els.detailMapOpacityRange.value) / 100; syncMapLayerControls(); draw(); });
 els.terrainToggle.addEventListener("change", () => { state.showTerrain = els.terrainToggle.checked; syncMapLayerControls(); draw(); });
 els.terrainStyleSelect.addEventListener("change", () => { state.terrainStyle = els.terrainStyleSelect.value; draw(); });
 els.weatherOpacityRange.addEventListener("input", () => { state.weatherOpacity = Number(els.weatherOpacityRange.value) / 100; syncMapLayerControls(); draw(); });
@@ -4339,6 +4346,7 @@ function shareUrl() {
   url.searchParams.set("labels", state.showPlaceLabels ? "1" : "0");
   url.searchParams.set("tooltip", state.showTooltip ? "1" : "0");
   url.searchParams.set("detail", state.showDetailMap ? "1" : "0");
+  url.searchParams.set("detailOpacity", String(Math.round(state.detailMapOpacity * 100)));
   url.searchParams.set("terrain", state.showTerrain ? "1" : "0");
   url.searchParams.set("terrainStyle", state.terrainStyle);
   url.searchParams.set("weatherOpacity", String(Math.round(state.weatherOpacity * 100)));
@@ -4398,6 +4406,9 @@ function applyUrlState() {
   if (params.get("labels") === "0") state.showPlaceLabels = false;
   if (params.get("tooltip") === "0") state.showTooltip = false;
   if (params.get("detail") === "1") state.showDetailMap = true;
+  const detailOpacityParam = params.get("detailOpacity");
+  const detailOpacity = Number(detailOpacityParam);
+  if (detailOpacityParam !== null && Number.isFinite(detailOpacity) && detailOpacity >= 0 && detailOpacity <= 100) state.detailMapOpacity = detailOpacity / 100;
   if (params.get("terrain") === "1") state.showTerrain = true;
   if (["color", "mono"].includes(params.get("terrainStyle"))) state.terrainStyle = params.get("terrainStyle");
   const weatherOpacity = Number(params.get("weatherOpacity"));
