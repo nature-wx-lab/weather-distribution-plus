@@ -622,7 +622,12 @@ function weatherMapTimeLabel(fileName) {
   const match = String(fileName).match(/_(\d{14})_MET_/);
   if (!match) return "";
   const value = match[1];
-  return `${Number(value.slice(4, 6))}月${Number(value.slice(6, 8))}日${Number(value.slice(8, 10))}時`;
+  return `${Number(value.slice(0, 4))}年${Number(value.slice(4, 6))}月${Number(value.slice(6, 8))}日${Number(value.slice(8, 10))}時`;
+}
+
+function weatherMapKindLabel(compact = false) {
+  if (state.weatherMapKind === "now") return compact ? "実況" : "最新実況";
+  return state.weatherMapKind === "ft24" ? "24時間予想" : "48時間予想";
 }
 
 function syncWeatherMapControls() {
@@ -635,7 +640,7 @@ function syncWeatherMapControls() {
   els.weatherMapOpacityValue.value = `${Math.round(state.weatherMapOpacity * 100)}%`;
   if (!state.showWeatherMap) return;
   const fileName = weatherMapFileName();
-  const kindLabel = state.weatherMapKind === "now" ? "最新実況" : state.weatherMapKind === "ft24" ? "24時間予想" : "48時間予想";
+  const kindLabel = weatherMapKindLabel();
   els.weatherMapStatus.textContent = state.weatherMapLoading
     ? `${kindLabel}を読み込み中…`
     : fileName
@@ -662,6 +667,7 @@ function extractWeatherMapInk(image) {
   imageContext.drawImage(image, 0, 0);
   const pixels = imageContext.getImageData(0, 0, canvas.width, canvas.height);
   const data = pixels.data;
+  const darkMask = new Uint8Array(canvas.width * canvas.height);
   for (let y = 0; y < canvas.height; y += 1) {
     for (let x = 0; x < canvas.width; x += 1) {
       const index = (y * canvas.width + x) * 4;
@@ -676,7 +682,31 @@ function extractWeatherMapInk(image) {
       const isBlueInk = blue > 105 && blue > red * 1.5 && blue > green * 1.25;
       const insideMap = y >= 28 && y < canvas.height - 22;
       if (!(insideMap && (isDarkInk || isRedInk || isBlueInk))) data[index + 3] = 0;
-      else data[index + 3] = Math.min(255, Math.max(110, data[index + 3]));
+      else {
+        data[index + 3] = Math.min(255, Math.max(110, data[index + 3]));
+        if (isDarkInk) darkMask[y * canvas.width + x] = 1;
+      }
+    }
+  }
+  // Thin solid isobars lose antialiased edge pixels during reprojection. Add a
+  // one-pixel dark fringe; genuine dashed gaps are wider and remain dashed.
+  const source = new Uint8ClampedArray(data);
+  for (let y = 29; y < canvas.height - 23; y += 1) {
+    for (let x = 1; x < canvas.width - 1; x += 1) {
+      const pixel = y * canvas.width + x;
+      const index = pixel * 4;
+      if (data[index + 3] || !(
+        darkMask[pixel - 1] || darkMask[pixel + 1]
+        || darkMask[pixel - canvas.width] || darkMask[pixel + canvas.width]
+      )) continue;
+      let neighbor = pixel - 1;
+      if (!darkMask[neighbor]) neighbor = darkMask[pixel + 1] ? pixel + 1
+        : darkMask[pixel - canvas.width] ? pixel - canvas.width : pixel + canvas.width;
+      const neighborIndex = neighbor * 4;
+      data[index] = source[neighborIndex];
+      data[index + 1] = source[neighborIndex + 1];
+      data[index + 2] = source[neighborIndex + 2];
+      data[index + 3] = 155;
     }
   }
   imageContext.putImageData(pixels, 0, 0);
@@ -1955,7 +1985,7 @@ function drawMapLegend() {
       ctx.fillText(item.label, left + 74, y + 21);
     });
     ctx.restore();
-    return;
+    return { left, top, width: boxW, height: boxH };
   }
   const boxW = 190;
   const boxH = Math.min(610, Math.max(500, els.canvas.height - 150));
@@ -2009,6 +2039,28 @@ function drawMapLegend() {
     const label = cfg.signed && value > 0 ? `+${value}` : String(value);
     ctx.fillText(label, barLeft + barW + 22, y + 9);
   });
+  ctx.restore();
+  return { left, top, width: boxW, height: boxH };
+}
+
+function drawWeatherMapMetadata(legendBounds) {
+  const fileName = weatherMapFileName();
+  if (!state.showWeatherMap || !fileName || !legendBounds) return;
+  const width = legendBounds.width;
+  const height = 92;
+  const left = legendBounds.left;
+  const top = Math.min(els.canvas.height - height - 24, legendBounds.top + legendBounds.height + 14);
+  ctx.save();
+  ctx.fillStyle = "rgba(255,255,255,0.93)";
+  ctx.strokeStyle = "rgba(80,92,104,0.55)";
+  ctx.lineWidth = 1;
+  ctx.fillRect(left, top, width, height);
+  ctx.strokeRect(left, top, width, height);
+  ctx.fillStyle = "#202932";
+  ctx.font = "900 20px -apple-system, BlinkMacSystemFont, sans-serif";
+  ctx.fillText(`天気図：${weatherMapKindLabel(true)}`, left + 16, top + 32);
+  ctx.font = "800 17px -apple-system, BlinkMacSystemFont, sans-serif";
+  ctx.fillText(`${weatherMapTimeLabel(fileName)}対象`, left + 16, top + 66);
   ctx.restore();
 }
 
@@ -2692,7 +2744,8 @@ function draw() {
     ctx.restore();
   }
   drawScaleBar();
-  drawMapLegend();
+  const legendBounds = drawMapLegend();
+  drawWeatherMapMetadata(legendBounds);
   if (state.hoverPoint) {
     const [x, y] = lonLatToPixel(state.hoverPoint.lon, state.hoverPoint.lat);
     ctx.save();
