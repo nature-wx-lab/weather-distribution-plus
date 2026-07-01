@@ -71,6 +71,7 @@ const state = {
   terrainOpacity: 0.35,
   showWeatherMap: false,
   weatherMapKind: "now",
+  weatherMapNowIndex: -1,
   weatherMapOpacity: 0.75,
   weatherMapManifest: null,
   weatherMapImage: null,
@@ -169,6 +170,7 @@ const els = {
   weatherMapButton: document.getElementById("weatherMapButton"),
   weatherMapControls: document.getElementById("weatherMapControls"),
   weatherMapKindSelect: document.getElementById("weatherMapKindSelect"),
+  weatherMapTimeSelect: document.getElementById("weatherMapTimeSelect"),
   weatherMapOpacityRange: document.getElementById("weatherMapOpacityRange"),
   weatherMapOpacityValue: document.getElementById("weatherMapOpacityValue"),
   weatherMapStatus: document.getElementById("weatherMapStatus"),
@@ -615,7 +617,9 @@ async function loadTemperatureExtremes() {
 
 function weatherMapFileName() {
   const files = state.weatherMapManifest?.near?.[state.weatherMapKind];
-  return Array.isArray(files) && files.length ? files[files.length - 1] : "";
+  if (!Array.isArray(files) || !files.length) return "";
+  if (state.weatherMapKind !== "now" || state.weatherMapNowIndex < 0) return files[files.length - 1];
+  return files[Math.min(state.weatherMapNowIndex, files.length - 1)] || files[files.length - 1];
 }
 
 function weatherMapTimeLabel(fileName) {
@@ -623,6 +627,36 @@ function weatherMapTimeLabel(fileName) {
   if (!match) return "";
   const value = match[1];
   return `${Number(value.slice(0, 4))}年${Number(value.slice(4, 6))}月${Number(value.slice(6, 8))}日${Number(value.slice(8, 10))}時`;
+}
+
+function weatherMapTimeLabelNoYear(fileName) {
+  const match = String(fileName).match(/_(\d{14})_MET_/);
+  if (!match) return "";
+  const value = match[1];
+  return `${Number(value.slice(4, 6))}月${Number(value.slice(6, 8))}日${Number(value.slice(8, 10))}時`;
+}
+
+function syncWeatherMapTimeOptions() {
+  if (!els.weatherMapTimeSelect) return;
+  const files = state.weatherMapManifest?.near?.now || [];
+  const latestTime = Date.parse(String(files.at(-1) || "").match(/_(\d{8})(\d{6})_MET_/)?.slice(1).join("T")
+    ?.replace(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})$/, "$1-$2-$3T$4:$5:$6Z") || "");
+  const recentFiles = files.map((fileName, originalIndex) => ({ fileName, originalIndex })).filter(({ fileName }) => {
+    const match = fileName.match(/_(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})_MET_/);
+    if (!match || !Number.isFinite(latestTime)) return true;
+    const time = Date.parse(`${match[1]}-${match[2]}-${match[3]}T${match[4]}:${match[5]}:${match[6]}Z`);
+    return latestTime - time <= 48 * 60 * 60 * 1000;
+  });
+  els.weatherMapTimeSelect.replaceChildren();
+  [...recentFiles].reverse().forEach(({ fileName, originalIndex }) => {
+    const option = document.createElement("option");
+    option.value = String(originalIndex);
+    option.textContent = weatherMapTimeLabel(fileName);
+    els.weatherMapTimeSelect.append(option);
+  });
+  const latestIndex = Math.max(0, files.length - 1);
+  els.weatherMapTimeSelect.value = String(state.weatherMapNowIndex < 0 ? latestIndex : Math.min(state.weatherMapNowIndex, latestIndex));
+  els.weatherMapTimeSelect.disabled = state.weatherMapKind !== "now" || !files.length;
 }
 
 function weatherMapKindLabel(compact = false) {
@@ -636,6 +670,7 @@ function syncWeatherMapControls() {
   els.weatherMapButton.setAttribute("aria-pressed", state.showWeatherMap ? "true" : "false");
   els.weatherMapControls.hidden = !state.showWeatherMap;
   els.weatherMapKindSelect.value = state.weatherMapKind;
+  syncWeatherMapTimeOptions();
   els.weatherMapOpacityRange.value = String(Math.round(state.weatherMapOpacity * 100));
   els.weatherMapOpacityValue.value = `${Math.round(state.weatherMapOpacity * 100)}%`;
   if (!state.showWeatherMap) return;
@@ -657,6 +692,16 @@ async function loadWeatherMapManifest() {
     state.weatherMapManifest = null;
   }
   syncWeatherMapControls();
+}
+
+async function checkWeatherMapUpdate() {
+  const previousFile = weatherMapFileName();
+  await loadWeatherMapManifest();
+  const nextFile = weatherMapFileName();
+  if (!state.showWeatherMap || !nextFile || nextFile === previousFile) return;
+  state.weatherMapImage = null;
+  state.weatherMapImageKey = "";
+  await loadWeatherMapImage();
 }
 
 function extractWeatherMapInk(image) {
@@ -1181,7 +1226,7 @@ function targetLabelForStamp(slot, dataType) {
   const targetParts = parseIsoLikeDateTime(slot.target_date);
   if (targetParts && (slot.element === "min" || slot.element === "max")) {
     const timeBand = slot.element === "min" ? "明け方" : "日中";
-    return `${formatDateTimeJa(targetParts, { dateOnly: true, noYear: true })} ${timeBand}`;
+    return `${formatDateTimeJa(targetParts, { dateOnly: true })} ${timeBand}`;
   }
   const validParts = slotValidTimeParts(slot);
   if (validParts) return formatDateTimeJa(validParts);
@@ -1221,7 +1266,7 @@ function updateMapStamp(elementLabel, sourceLabel, dataType) {
     } else {
       const timeBand = state.element === "min" ? "明け方" : "日中";
       const updating = slot?.source === "realtime" ? "（更新中）" : "";
-      targetText = `${observedParts ? formatDateTimeJa(observedParts, { dateOnly: true, noYear: true }) : sourceDate || "--"} ${timeBand}${updating}`;
+      targetText = `${observedParts ? formatDateTimeJa(observedParts, { dateOnly: true }) : sourceDate || "--"} ${timeBand}${updating}`;
     }
     }
   }
@@ -2058,9 +2103,9 @@ function drawWeatherMapMetadata(legendBounds) {
   ctx.strokeRect(left, top, width, height);
   ctx.fillStyle = "#202932";
   ctx.font = "900 20px -apple-system, BlinkMacSystemFont, sans-serif";
-  ctx.fillText(`天気図：${weatherMapKindLabel(true)}`, left + 16, top + 32);
-  ctx.font = "800 17px -apple-system, BlinkMacSystemFont, sans-serif";
-  ctx.fillText(`${weatherMapTimeLabel(fileName)}対象`, left + 16, top + 66);
+  ctx.fillText(`天気図：${state.weatherMapKind === "now" ? "実況" : "予想"}`, left + 16, top + 32);
+  ctx.font = "800 16px -apple-system, BlinkMacSystemFont, sans-serif";
+  ctx.fillText(`${weatherMapTimeLabelNoYear(fileName)}対象`, left + 16, top + 66);
   ctx.restore();
 }
 
@@ -2470,10 +2515,19 @@ function drawImageTriangle(image, source, destination) {
   const d = (dy0 * (sx2 - sx1) + dy1 * (sx0 - sx2) + dy2 * (sx1 - sx0)) / denominator;
   const f = (dy0 * (sx1 * sy2 - sx2 * sy1) + dy1 * (sx2 * sy0 - sx0 * sy2) + dy2 * (sx0 * sy1 - sx1 * sy0)) / denominator;
   ctx.save();
+  const centerX = (dx0 + dx1 + dx2) / 3;
+  const centerY = (dy0 + dy1 + dy2) / 3;
+  const expand = (x, y) => {
+    const distance = Math.hypot(x - centerX, y - centerY) || 1;
+    return [x + (x - centerX) / distance * 1.4, y + (y - centerY) / distance * 1.4];
+  };
+  const [cx0, cy0] = expand(dx0, dy0);
+  const [cx1, cy1] = expand(dx1, dy1);
+  const [cx2, cy2] = expand(dx2, dy2);
   ctx.beginPath();
-  ctx.moveTo(dx0, dy0);
-  ctx.lineTo(dx1, dy1);
-  ctx.lineTo(dx2, dy2);
+  ctx.moveTo(cx0, cy0);
+  ctx.lineTo(cx1, cy1);
+  ctx.lineTo(cx2, cy2);
   ctx.closePath();
   ctx.clip();
   ctx.transform(a, b, c, d, e, f);
@@ -4199,6 +4253,12 @@ els.weatherMapKindSelect?.addEventListener("change", async () => {
   state.weatherMapImageKey = "";
   await loadWeatherMapImage();
 });
+els.weatherMapTimeSelect?.addEventListener("change", async () => {
+  state.weatherMapNowIndex = Number(els.weatherMapTimeSelect.value);
+  state.weatherMapImage = null;
+  state.weatherMapImageKey = "";
+  await loadWeatherMapImage();
+});
 els.weatherMapOpacityRange?.addEventListener("input", () => {
   state.weatherMapOpacity = Number(els.weatherMapOpacityRange.value) / 100;
   syncWeatherMapControls();
@@ -4363,6 +4423,7 @@ async function init() {
   }
   window.setInterval(checkForecastManifestUpdate, FORECAST_MANIFEST_POLL_MS);
   window.setInterval(checkObservedDataUpdate, OBSERVED_DATA_POLL_MS);
+  window.setInterval(checkWeatherMapUpdate, 10 * 60 * 1000);
 }
 
 init();
