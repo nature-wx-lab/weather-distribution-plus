@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-02T02:51:34+09:00",
+  "generated_at": "2026-07-02T03:01:42+09:00",
   "source": "JMA天気分布予報 targetTimes.json / *_temp_point / wm / r3 / s3 GeoJSON / VPFD地域時系列予報",
   "service_date": "2026-07-01",
   "daily_rollover_hour_jst": 6,
@@ -138,8 +138,8 @@
           "target_date": "2026-07-02",
           "basetime": "20260701080000",
           "validtime": "20260701180000",
-          "status": "available",
-          "message": ""
+          "status": "stale",
+          "message": "予測対象時刻を過ぎています。必要に応じて実況も確認してください。"
         },
         {
           "id": "temp3h_20260701210000",
@@ -247,8 +247,8 @@
           "basetime": "20260701080000",
           "validtime": "20260701180000",
           "interval_label": "7月2日00時〜03時",
-          "status": "available",
-          "message": ""
+          "status": "stale",
+          "message": "予測対象時刻を過ぎています。必要に応じて実況も確認してください。"
         },
         {
           "id": "weather3h_20260701210000",
@@ -363,8 +363,8 @@
           "basetime": "20260701080000",
           "validtime": "20260701180000",
           "interval_label": "7月2日00時〜03時",
-          "status": "available",
-          "message": ""
+          "status": "stale",
+          "message": "予測対象時刻を過ぎています。必要に応じて実況も確認してください。"
         },
         {
           "id": "precip3h_20260701210000",
@@ -479,8 +479,8 @@
           "basetime": "20260701080000",
           "validtime": "20260701180000",
           "interval_label": "7月2日00時〜03時",
-          "status": "available",
-          "message": ""
+          "status": "stale",
+          "message": "予測対象時刻を過ぎています。必要に応じて実況も確認してください。"
         },
         {
           "id": "snow3h_20260701210000",
