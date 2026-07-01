@@ -180,6 +180,11 @@
           </select>
         </label>
 
+        <div class="toggle-row extreme-actions">
+          <button id="recordMarkersButton" type="button" aria-pressed="false">気温記録更新</button>
+          <button id="rankingPanelButton" type="button" aria-pressed="false">気温ランキング</button>
+        </div>
+
         <label class="visually-hidden">
           <span>対象</span>
           <select id="targetSelect">
@@ -187,32 +192,35 @@
           </select>
         </label>
 
-        <div class="toggle-row share-actions">
-          <button id="downloadButton" type="button">画像保存</button>
-          <button id="copyLinkButton" type="button">リンクコピー</button>
-          <button id="weatherMapButton" type="button" aria-pressed="false">天気図</button>
-        </div>
-        <div id="weatherMapControls" class="weather-map-controls" hidden>
-          <label>
-            <span>天気図</span>
-            <select id="weatherMapKindSelect">
-              <option value="now">実況</option>
-              <option value="ft24">24時間予想図</option>
-              <option value="ft48">48時間予想図</option>
-            </select>
-          </label>
-          <label class="weather-map-time-control">
-            <span>実況日時</span>
-            <select id="weatherMapTimeSelect" aria-label="実況天気図の対象時刻"></select>
-          </label>
-          <label class="opacity-control">
-            <span>天気図の濃さ</span>
-            <input id="weatherMapOpacityRange" type="range" min="0" max="100" step="5" value="75" />
-            <output id="weatherMapOpacityValue">75%</output>
-          </label>
-          <p id="weatherMapStatus" class="weather-map-status" role="status" aria-live="polite"></p>
-        </div>
-        <p id="copyLinkStatus" class="copy-link-status" role="status" aria-live="polite"></p>
+        <details class="map-layer-settings weather-map-settings" open>
+          <summary>天気図を表示</summary>
+          <div class="map-layer-settings-body">
+            <label class="check-row">
+              <input id="weatherMapButton" type="checkbox" />
+              <span>天気図を重ねる</span>
+            </label>
+            <div id="weatherMapControls" class="weather-map-controls" hidden>
+              <label>
+                <span>天気図</span>
+                <select id="weatherMapKindSelect">
+                  <option value="now">実況</option>
+                  <option value="ft24">24時間予想図</option>
+                  <option value="ft48">48時間予想図</option>
+                </select>
+              </label>
+              <label class="weather-map-time-control">
+                <span>実況日時</span>
+                <select id="weatherMapTimeSelect" aria-label="実況天気図の対象時刻"></select>
+              </label>
+              <label class="opacity-control">
+                <span>天気図の濃さ</span>
+                <input id="weatherMapOpacityRange" type="range" min="0" max="100" step="5" value="75" />
+                <output id="weatherMapOpacityValue">75%</output>
+              </label>
+              <p id="weatherMapStatus" class="weather-map-status" role="status" aria-live="polite"></p>
+            </div>
+          </div>
+        </details>
 
         <div class="map-display-quick">
           <label class="check-row">
@@ -226,7 +234,7 @@
         </div>
 
         <details class="map-layer-settings" open>
-          <summary>地図表示</summary>
+          <summary>地図を表示</summary>
           <div class="map-layer-settings-body">
             <label class="check-row">
               <input id="detailMapToggle" type="checkbox" />
@@ -261,10 +269,11 @@
           </div>
         </details>
 
-        <div class="toggle-row extreme-actions">
-          <button id="recordMarkersButton" type="button" aria-pressed="false">気温記録更新</button>
-          <button id="rankingPanelButton" type="button" aria-pressed="false">気温ランキング</button>
+        <div class="toggle-row share-actions share-actions-two">
+          <button id="downloadButton" type="button">画像保存</button>
+          <button id="copyLinkButton" type="button">リンクコピー</button>
         </div>
+        <p id="copyLinkStatus" class="copy-link-status" role="status" aria-live="polite"></p>
 
         <section class="readout">
           <h2>地点詳細</h2>

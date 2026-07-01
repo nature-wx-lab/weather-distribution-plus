@@ -78,6 +78,11 @@ const state = {
   weatherMapImage: null,
   weatherMapImageKey: "",
   weatherMapLoading: false,
+  legendOffsetX: 0,
+  legendOffsetY: 0,
+  legendBounds: null,
+  legendDragging: false,
+  legendDragStart: null,
   gsiTileCache: new Map(),
   placeLabels: [],
   chartStations: [],
@@ -675,8 +680,7 @@ function weatherMapKindLabel(compact = false) {
 
 function syncWeatherMapControls() {
   if (!els.weatherMapButton) return;
-  els.weatherMapButton.classList.toggle("active", state.showWeatherMap);
-  els.weatherMapButton.setAttribute("aria-pressed", state.showWeatherMap ? "true" : "false");
+  els.weatherMapButton.checked = state.showWeatherMap;
   els.weatherMapControls.hidden = !state.showWeatherMap;
   els.weatherMapKindSelect.value = state.weatherMapKind;
   syncWeatherMapTimeOptions();
@@ -2013,12 +2017,15 @@ function legendConfig() {
 
 function drawMapLegend() {
   const cfg = legendConfig();
+  const metadataHeight = state.showWeatherMap ? 126 : 0;
   if (cfg.type === "weather") {
     const boxW = 190;
     const rowH = 44;
     const boxH = 86 + cfg.items.length * rowH;
-    const left = els.canvas.width - boxW - 28;
-    const top = 78;
+    const defaultLeft = els.canvas.width - boxW - 28;
+    const defaultTop = 78;
+    const left = Math.max(8, Math.min(els.canvas.width - boxW - 8, defaultLeft + state.legendOffsetX));
+    const top = Math.max(8, Math.min(els.canvas.height - boxH - metadataHeight - 8, defaultTop + state.legendOffsetY));
     ctx.save();
     ctx.fillStyle = "rgba(255,255,255,0.93)";
     ctx.strokeStyle = "rgba(80,92,104,0.55)";
@@ -2043,8 +2050,10 @@ function drawMapLegend() {
   }
   const boxW = 190;
   const boxH = Math.min(610, Math.max(500, els.canvas.height - 150));
-  const left = els.canvas.width - boxW - 28;
-  const top = 64;
+  const defaultLeft = els.canvas.width - boxW - 28;
+  const defaultTop = 64;
+  const left = Math.max(8, Math.min(els.canvas.width - boxW - 8, defaultLeft + state.legendOffsetX));
+  const top = Math.max(8, Math.min(els.canvas.height - boxH - metadataHeight - 8, defaultTop + state.legendOffsetY));
   const barLeft = left + 34;
   const titleLines = cfg.titleLines || [cfg.title];
   const twoLineTitle = titleLines.length > 1;
@@ -2103,7 +2112,7 @@ function drawWeatherMapMetadata(legendBounds) {
   const width = legendBounds.width;
   const height = 112;
   const left = legendBounds.left;
-  const top = Math.min(els.canvas.height - height - 24, legendBounds.top + legendBounds.height + 14);
+  const top = legendBounds.top + legendBounds.height + 14;
   ctx.save();
   ctx.fillStyle = "rgba(255,255,255,0.93)";
   ctx.strokeStyle = "rgba(80,92,104,0.55)";
@@ -2823,6 +2832,10 @@ function draw() {
   }
   drawScaleBar();
   const legendBounds = drawMapLegend();
+  state.legendBounds = legendBounds ? {
+    ...legendBounds,
+    height: legendBounds.height + (state.showWeatherMap ? 126 : 0),
+  } : null;
   drawWeatherMapMetadata(legendBounds);
   if (state.hoverPoint) {
     const [x, y] = lonLatToPixel(state.hoverPoint.lon, state.hoverPoint.lat);
@@ -3942,6 +3955,15 @@ function canvasPosition(event) {
 
 els.canvas.addEventListener("mousemove", (event) => {
   const [x, y, rect] = canvasPosition(event);
+  if (state.legendDragging && state.legendDragStart) {
+    const dx = x - state.legendDragStart.x;
+    const dy = y - state.legendDragStart.y;
+    state.legendOffsetX = state.legendDragStart.offsetX + dx;
+    state.legendOffsetY = state.legendDragStart.offsetY + dy;
+    state.dragMoved = true;
+    draw();
+    return;
+  }
   if (state.dragging && state.dragStart) {
     const dx = x - state.dragStart.x;
     const dy = y - state.dragStart.y;
@@ -3971,6 +3993,7 @@ els.canvas.addEventListener("mousemove", (event) => {
 });
 
 els.canvas.addEventListener("mouseleave", () => {
+  if (state.legendDragging) return;
   state.dragging = false;
   state.dragStart = null;
   els.canvasWrap.classList.remove("dragging");
@@ -3982,6 +4005,15 @@ els.canvas.addEventListener("mouseleave", () => {
 
 els.canvas.addEventListener("mousedown", (event) => {
   const [x, y] = canvasPosition(event);
+  const bounds = state.legendBounds;
+  if (bounds && x >= bounds.left && x <= bounds.left + bounds.width && y >= bounds.top && y <= bounds.top + bounds.height) {
+    state.legendDragging = true;
+    state.legendDragStart = { x, y, offsetX: state.legendOffsetX, offsetY: state.legendOffsetY };
+    state.dragMoved = false;
+    els.canvasWrap.classList.add("dragging");
+    event.preventDefault();
+    return;
+  }
   state.dragging = true;
   state.dragStart = { x, y };
   state.dragMoved = false;
@@ -3989,6 +4021,8 @@ els.canvas.addEventListener("mousedown", (event) => {
 });
 
 window.addEventListener("mouseup", () => {
+  state.legendDragging = false;
+  state.legendDragStart = null;
   state.dragging = false;
   state.dragStart = null;
   els.canvasWrap.classList.remove("dragging");
@@ -4269,8 +4303,8 @@ els.terrainToggle.addEventListener("change", () => { state.showTerrain = els.ter
 els.terrainStyleSelect.addEventListener("change", () => { state.terrainStyle = els.terrainStyleSelect.value; draw(); });
 els.weatherOpacityRange.addEventListener("input", () => { state.weatherOpacity = Number(els.weatherOpacityRange.value) / 100; syncMapLayerControls(); draw(); });
 els.terrainOpacityRange.addEventListener("input", () => { state.terrainOpacity = Number(els.terrainOpacityRange.value) / 100; syncMapLayerControls(); draw(); });
-els.weatherMapButton?.addEventListener("click", async () => {
-  state.showWeatherMap = !state.showWeatherMap;
+els.weatherMapButton?.addEventListener("change", async () => {
+  state.showWeatherMap = els.weatherMapButton.checked;
   syncWeatherMapControls();
   if (state.showWeatherMap) await loadWeatherMapImage();
   else draw();
