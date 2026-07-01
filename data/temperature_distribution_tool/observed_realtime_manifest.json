@@ -1,13 +1,13 @@
 {
   "generator_version": 4,
-  "generated_at": "2026-07-02T01:42:00.430047+09:00",
-  "latest_time": "2026-07-02T01:30:00+09:00",
+  "generated_at": "2026-07-02T01:51:35.712406+09:00",
+  "latest_time": "2026-07-02T01:40:00+09:00",
   "source": "JMA AMeDAS latest_time.txt / data/map/{YYYYMMDDHHMM00}.json 10-minute observations",
   "realtime_layers": {
     "station_observations": {
       "json": "observed_realtime_station_observations.json",
       "csv": "observed_realtime_station_observations.csv",
-      "latest_time": "2026-07-02T01:30:00+09:00",
+      "latest_time": "2026-07-02T01:40:00+09:00",
       "station_count": 1286,
       "elements": {
         "temperature": {
@@ -23,12 +23,12 @@
         "wind_speed": {
           "field": "wind_speed_ms",
           "unit": "m/s",
-          "station_count": 914
+          "station_count": 915
         },
         "wind_direction": {
           "field": "wind_direction_deg",
           "unit": "degree",
-          "station_count": 914
+          "station_count": 915
         }
       },
       "quality_fields": "JMA raw numeric quality codes"
@@ -210,7 +210,7 @@
       "label": "2日最低",
       "element": "min",
       "target_date": "2026-07-02",
-      "target_time": "2026-07-02T01:30:00+09:00",
+      "target_time": "2026-07-02T01:40:00+09:00",
       "status": "available",
       "source": "realtime",
       "station_reference": "observed_20260702_min_station_values.json",
@@ -224,7 +224,7 @@
       "label": "2日最高",
       "element": "max",
       "target_date": "2026-07-02",
-      "target_time": "2026-07-02T01:30:00+09:00",
+      "target_time": "2026-07-02T01:40:00+09:00",
       "status": "available",
       "source": "realtime",
       "station_reference": "observed_20260702_max_station_values.json",
