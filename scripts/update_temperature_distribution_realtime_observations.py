@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import csv
 import html
 import json
@@ -392,6 +393,82 @@ def collect_station_extremes(
     return latest, values
 
 
+def backfill_station_timeseries(
+    path: Path,
+    latest: datetime,
+    amedas_table: dict,
+    days: int,
+    workers: int,
+) -> None:
+    """Backfill the public 10-minute point series from JMA's still-available map archive."""
+    cutoff = latest - timedelta(days=max(1, days))
+    times: list[datetime] = []
+    current = cutoff.replace(second=0, microsecond=0)
+    current -= timedelta(minutes=current.minute % 10)
+    while current <= latest:
+        times.append(current)
+        current += timedelta(minutes=10)
+
+    existing = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {"stations": []}
+    stations = {str(item.get("station_key")): item for item in existing.get("stations", [])}
+    series_by_key = {
+        key: {
+            str(time_value): float(value)
+            for time_value, value in item.get("series", [])
+            if datetime.fromisoformat(str(time_value)).astimezone(JST) >= cutoff
+        }
+        for key, item in stations.items()
+    }
+
+    def fetch_one(value_time: datetime) -> tuple[datetime, dict]:
+        return value_time, fetch_json(AMEDAS_MAP_URL.format(time_key=time_key(value_time)))
+
+    completed = 0
+    with ThreadPoolExecutor(max_workers=max(1, workers)) as executor:
+        futures = {executor.submit(fetch_one, value_time): value_time for value_time in times}
+        for future in as_completed(futures):
+            value_time, payload = future.result()
+            time_label = value_time.isoformat()
+            for amedas_id, observation in payload.items():
+                temp = observation.get("temp")
+                station = amedas_table.get(amedas_id) or {}
+                if not isinstance(temp, list) or not temp or temp[0] is None or "lat" not in station or "lon" not in station:
+                    continue
+                elevation = station.get("alt")
+                if elevation is not None and float(elevation) > MAX_INTERPOLATION_ELEVATION_M:
+                    continue
+                key = str(amedas_id)
+                if key not in stations:
+                    stations[key] = {
+                        "station_key": key,
+                        "name": str(station.get("kjName") or station.get("enName") or key),
+                        "region": "",
+                        "longitude": latlon_decimal(station["lon"]),
+                        "latitude": latlon_decimal(station["lat"]),
+                        "series": [],
+                    }
+                series_by_key.setdefault(key, {})[time_label] = round(float(temp[0]), 1)
+            completed += 1
+            if completed % 100 == 0 or completed == len(times):
+                print(f"backfill station series: {completed}/{len(times)}", flush=True)
+
+    output_stations = []
+    for key, station in stations.items():
+        by_time = series_by_key.get(key, {})
+        if not by_time:
+            continue
+        station["series"] = [[time_value, by_time[time_value]] for time_value in sorted(by_time)]
+        output_stations.append(station)
+    output = {
+        "generated_at": datetime.now(JST).isoformat(),
+        "latest_time": latest.isoformat(),
+        "source": "JMA AMeDAS data/map 10-minute observations, 7-day archive backfill and saved refresh",
+        "stations": output_stations,
+    }
+    path.write_text(json.dumps(output, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    print(f"backfilled {len(output_stations)} stations from {times[0].isoformat()} to {times[-1].isoformat()}", flush=True)
+
+
 def idw_values(points: list[tuple[float, float, float]], values: list[RealtimeStationValue]) -> np.ndarray:
     return idw_normals_for_points(points, values)
 
@@ -555,8 +632,17 @@ def load_saved_slot_observed_grid(out_dir: Path, slot_id: str, expected_count: i
 
 def build(args: argparse.Namespace) -> None:
     latest = parse_latest_time(fetch_text(LATEST_TIME_URL))
-    index = load_index(args.index)
     amedas_table = fetch_json(AMEDAS_TABLE_URL)
+    if args.backfill_series_only:
+        backfill_station_timeseries(
+            args.out_dir / "observed_realtime_station_timeseries.json",
+            latest,
+            amedas_table,
+            args.days,
+            args.backfill_workers,
+        )
+        return
+    index = load_index(args.index)
     latest_payload = fetch_json(AMEDAS_MAP_URL.format(time_key=time_key(latest)))
     latest_observations, latest_observation_rows = build_latest_station_observations(
         latest, latest_payload, amedas_table
@@ -854,6 +940,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--station-inventory", type=Path, default=STATION_INVENTORY)
     parser.add_argument("--max-steps", type=int, default=0, help="Limit 10-minute files, for tests. 0 means from midnight.")
     parser.add_argument("--days", type=int, default=7, help="Observed min/max days to expose in the timeline and point chart, including today.")
+    parser.add_argument("--backfill-series-only", action="store_true", help="Backfill only the 10-minute station time series for the requested number of days.")
+    parser.add_argument("--backfill-workers", type=int, default=8, help="Parallel JMA requests used by --backfill-series-only.")
     return parser.parse_args()
 
 

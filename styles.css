@@ -1894,10 +1894,8 @@ dd {
 
 .panel-resize-handle {
   position: absolute;
-  right: 12px;
-  bottom: 12px;
-  width: 30px;
-  height: 30px;
+  width: 24px;
+  height: 24px;
   cursor: nwse-resize;
   touch-action: none;
   z-index: 3;
@@ -1906,14 +1904,19 @@ dd {
 .panel-resize-handle::after {
   content: "";
   position: absolute;
-  right: 2px;
-  bottom: 2px;
-  width: 10px;
-  height: 10px;
-  border-right: 2px solid #718092;
-  border-bottom: 2px solid #718092;
-  opacity: 0.8;
+  width: 12px;
+  height: 12px;
+  opacity: 0.9;
 }
+
+.panel-resize-handle.nw { left: -12px; top: -12px; cursor: nwse-resize; }
+.panel-resize-handle.ne { right: -12px; top: -12px; cursor: nesw-resize; }
+.panel-resize-handle.sw { left: -12px; bottom: -12px; cursor: nesw-resize; }
+.panel-resize-handle.se { right: -12px; bottom: -12px; cursor: nwse-resize; }
+.panel-resize-handle.nw::after { left: 10px; top: 10px; border-left: 3px solid #718092; border-top: 3px solid #718092; }
+.panel-resize-handle.ne::after { right: 10px; top: 10px; border-right: 3px solid #718092; border-top: 3px solid #718092; }
+.panel-resize-handle.sw::after { left: 10px; bottom: 10px; border-left: 3px solid #718092; border-bottom: 3px solid #718092; }
+.panel-resize-handle.se::after { right: 10px; bottom: 10px; border-right: 3px solid #718092; border-bottom: 3px solid #718092; }
 
 .point-chart-head h3 {
   margin: 0;

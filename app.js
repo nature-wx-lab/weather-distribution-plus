@@ -130,6 +130,13 @@ function escapeHtml(value) {
   }[character]));
 }
 
+function panelResizeHandles(kind) {
+  const label = kind === "ranking" ? "パネル" : "グラフ";
+  return ["nw", "ne", "sw", "se"].map((corner) =>
+    `<div class="panel-resize-handle ${corner}" data-panel-resize="${kind}" data-panel-corner="${corner}" role="separator" aria-label="${label}の大きさを変更"></div>`
+  ).join("");
+}
+
 const els = {
   canvas: document.getElementById("mapCanvas"),
   tooltip: document.getElementById("tooltip"),
@@ -1768,7 +1775,7 @@ function updateRankingPanel() {
   if (els.rankingPanel.hidden) return;
   applyRankingPanelPosition();
   if (!day) {
-    els.rankingPanel.innerHTML = `<div class="ranking-head"><strong>${recordPanelOpen ? "記録更新" : "気温ランキング"}</strong></div><p class="ranking-empty">データを読み込めません。</p><div class="panel-resize-handle" data-panel-resize="ranking" role="separator" aria-label="パネルの大きさを変更"></div>`;
+    els.rankingPanel.innerHTML = `<div class="ranking-head"><strong>${recordPanelOpen ? "記録更新" : "気温ランキング"}</strong></div><p class="ranking-empty">データを読み込めません。</p>${panelResizeHandles("ranking")}`;
     applyPanelScale(els.rankingPanel, state.rankingPanelScale);
     wirePanelResize(els.rankingPanel, "ranking");
     return;
@@ -1782,7 +1789,7 @@ function updateRankingPanel() {
         <button type="button" id="rankingPanelCloseButton" aria-label="閉じる">×</button>
       </div>
       <div class="record-grid">${renderRecordList(day, "all_time")}${renderRecordList(day, "monthly")}</div>
-      <div class="panel-resize-handle" data-panel-resize="ranking" role="separator" aria-label="パネルの大きさを変更"></div>`;
+      ${panelResizeHandles("ranking")}`;
     applyPanelScale(els.rankingPanel, state.rankingPanelScale);
     wireRankingPanelDrag();
     wirePanelResize(els.rankingPanel, "ranking");
@@ -1819,7 +1826,7 @@ function updateRankingPanel() {
         </div>
       </section>` : ""}
     </div>
-    <div class="panel-resize-handle" data-panel-resize="ranking" role="separator" aria-label="パネルの大きさを変更"></div>
+    ${panelResizeHandles("ranking")}
   `;
   applyPanelScale(els.rankingPanel, state.rankingPanelScale);
   wireRankingPanelDrag();
@@ -1867,21 +1874,36 @@ function applyPanelScale(panel, scale) {
 }
 
 function wirePanelResize(panel, kind) {
-  const handle = panel?.querySelector(`[data-panel-resize="${kind}"]`);
-  if (!handle || handle.dataset.wired === "1") return;
-  handle.dataset.wired = "1";
+  panel?.querySelectorAll(`[data-panel-resize="${kind}"]`).forEach((handle) => {
+    handle.dataset.wired = "1";
+  });
 }
 
 document.addEventListener("pointerdown", (event) => {
   const handle = event.target.closest?.("[data-panel-resize]");
   if (!handle) return;
   const kind = handle.dataset.panelResize;
+  const corner = handle.dataset.panelCorner || "se";
   const panel = kind === "ranking" ? els.rankingPanel : els.pointChartPanel;
   if (!panel) return;
   event.preventDefault();
   event.stopPropagation();
   const rect = panel.getBoundingClientRect();
-  state.panelResizeStart = { kind, panel, x: event.clientX, y: event.clientY, scale: kind === "ranking" ? state.rankingPanelScale : state.pointChartPanelScale, width: rect.width, height: rect.height };
+  const position = kind === "ranking"
+    ? (state.rankingPanelPosition || defaultRankingPanelPosition())
+    : (state.pointChartPanelPosition || defaultPointChartPanelPosition());
+  state.panelResizeStart = {
+    kind,
+    corner,
+    panel,
+    x: event.clientX,
+    y: event.clientY,
+    scale: kind === "ranking" ? state.rankingPanelScale : state.pointChartPanelScale,
+    width: rect.width,
+    height: rect.height,
+    left: position.left,
+    top: position.top,
+  };
   panel.classList.add("resizing");
 });
 
@@ -1890,10 +1912,19 @@ window.addEventListener("pointermove", (event) => {
   if (!start) return;
   const dx = event.clientX - start.x;
   const dy = event.clientY - start.y;
-  const ratio = Math.max((start.width + dx) / start.width, (start.height + dy) / start.height);
+  const widthRatio = (start.width + (start.corner.includes("w") ? -dx : dx)) / start.width;
+  const heightRatio = (start.height + (start.corner.includes("n") ? -dy : dy)) / start.height;
+  const ratio = Math.max(widthRatio, heightRatio);
   const scale = Math.max(0.65, Math.min(1.45, start.scale * ratio));
+  const scaleRatio = scale / start.scale;
+  const position = {
+    left: start.left + (start.corner.includes("w") ? start.width * (1 - scaleRatio) : 0),
+    top: start.top + (start.corner.includes("n") ? start.height * (1 - scaleRatio) : 0),
+  };
   if (start.kind === "ranking") state.rankingPanelScale = scale;
   else state.pointChartPanelScale = scale;
+  if (start.kind === "ranking") state.rankingPanelPosition = position;
+  else state.pointChartPanelPosition = position;
   applyPanelScale(start.panel, scale);
   if (start.kind === "ranking") applyRankingPanelPosition();
   else applyPointChartPanelPosition();
