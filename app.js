@@ -138,12 +138,13 @@ function escapeHtml(value) {
 }
 
 function panelResizeHandles(kind) {
-  const label = kind === "ranking" ? "パネル" : "グラフ";
+  const label = ["ranking", "record"].includes(kind) ? "パネル" : "グラフ";
   const corners = ["nw", "ne", "sw", "se"].map((corner) =>
     `<div class="panel-resize-handle ${corner}" data-panel-resize="${kind}" data-panel-corner="${corner}" role="separator" aria-label="${label}の大きさを変更"></div>`
   ).join("");
   const heightHandle = ["ranking", "record"].includes(kind)
-    ? `<div class="panel-height-resize-handle" data-panel-height-resize="${kind}" role="separator" aria-label="${label}の表示高さを変更"></div>`
+    ? `<div class="panel-height-resize-handle top" data-panel-height-resize="${kind}" data-panel-height-edge="top" role="separator" aria-label="${label}の上辺から表示高さを変更"></div>
+       <div class="panel-height-resize-handle bottom" data-panel-height-resize="${kind}" data-panel-height-edge="bottom" role="separator" aria-label="${label}の下辺から表示高さを変更"></div>`
     : "";
   return corners + heightHandle;
 }
@@ -1958,6 +1959,7 @@ document.addEventListener("pointerdown", (event) => {
     height: rect.height,
     left: position.left,
     top: position.top,
+    bottom: position.top + rect.height,
   };
   panel.classList.add("resizing");
 });
@@ -1975,7 +1977,8 @@ document.addEventListener("pointerdown", (event) => {
     ? (state.recordPanelPosition || defaultRecordPanelPosition())
     : (state.rankingPanelPosition || defaultRankingPanelPosition());
   state.panelHeightResizeStart = {
-    kind, panel, y: event.clientY, height: rect.height, bottom: position.top + rect.height,
+    kind, panel, edge: handle.dataset.panelHeightEdge || "top", y: event.clientY,
+    height: rect.height, top: position.top, bottom: position.top + rect.height,
     scale: kind === "record" ? state.recordPanelScale : state.rankingPanelScale,
   };
   panel.classList.add("resizing");
@@ -1984,27 +1987,17 @@ document.addEventListener("pointerdown", (event) => {
 window.addEventListener("pointermove", (event) => {
   const heightStart = state.panelHeightResizeStart;
   if (heightStart) {
-    const desiredHeight = Math.max(160, Math.min(heightStart.bottom - 10, heightStart.height - (event.clientY - heightStart.y)));
-    const top = Math.max(10, heightStart.bottom - desiredHeight);
-    const visualHeight = heightStart.bottom - top;
-    const cssHeight = visualHeight / heightStart.scale;
-    if (heightStart.kind === "record") {
-      state.recordPanelHeight = cssHeight;
-      state.recordPanelPosition = { ...(state.recordPanelPosition || defaultRecordPanelPosition()), top };
-      applyPanelHeight(heightStart.panel, cssHeight);
-      applyRecordPanelPosition();
-    } else {
-      state.rankingPanelHeight = cssHeight;
-      state.rankingPanelPosition = { ...(state.rankingPanelPosition || defaultRankingPanelPosition()), top };
-      applyPanelHeight(heightStart.panel, cssHeight);
-      applyRankingPanelPosition();
-    }
+    resizePanelHeightFromDrag(heightStart, heightStart.edge, event.clientY - heightStart.y);
     return;
   }
   const start = state.panelResizeStart;
   if (!start) return;
   const dx = event.clientX - start.x;
   const dy = event.clientY - start.y;
+  if (["ranking", "record"].includes(start.kind) && Math.abs(dy) > Math.abs(dx) * 1.25) {
+    resizePanelHeightFromDrag(start, start.corner.includes("n") ? "top" : "bottom", dy);
+    return;
+  }
   const widthRatio = (start.width + (start.corner.includes("w") ? -dx : dx)) / start.width;
   const heightRatio = (start.height + (start.corner.includes("n") ? -dy : dy)) / start.height;
   const ratio = Math.max(widthRatio, heightRatio);
@@ -2025,6 +2018,31 @@ window.addEventListener("pointermove", (event) => {
   else if (start.kind === "record") applyRecordPanelPosition();
   else applyPointChartPanelPosition();
 });
+
+function resizePanelHeightFromDrag(start, edge, dy) {
+  const wrapHeight = els.canvasWrap?.getBoundingClientRect().height || window.innerHeight;
+  let top = start.top;
+  let visualHeight;
+  if (edge === "bottom") {
+    visualHeight = Math.max(160, Math.min(wrapHeight - start.top - 10, start.height + dy));
+  } else {
+    const desiredHeight = Math.max(160, Math.min(start.bottom - 10, start.height - dy));
+    top = Math.max(10, start.bottom - desiredHeight);
+    visualHeight = start.bottom - top;
+  }
+  const cssHeight = visualHeight / start.scale;
+  if (start.kind === "record") {
+    state.recordPanelHeight = cssHeight;
+    state.recordPanelPosition = { ...(state.recordPanelPosition || defaultRecordPanelPosition()), top };
+    applyPanelHeight(start.panel, cssHeight);
+    applyRecordPanelPosition();
+  } else {
+    state.rankingPanelHeight = cssHeight;
+    state.rankingPanelPosition = { ...(state.rankingPanelPosition || defaultRankingPanelPosition()), top };
+    applyPanelHeight(start.panel, cssHeight);
+    applyRankingPanelPosition();
+  }
+}
 
 window.addEventListener("pointerup", () => {
   if (state.panelHeightResizeStart) {
