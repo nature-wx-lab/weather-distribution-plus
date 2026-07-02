@@ -107,6 +107,10 @@ const state = {
   rankingPanelDragging: false,
   rankingPanelDragStart: null,
   rankingPanelScale: 1,
+  recordPanelPosition: null,
+  recordPanelDragging: false,
+  recordPanelDragStart: null,
+  recordPanelScale: 1,
   pointChartPanelPosition: null,
   pointChartPanelDragging: false,
   pointChartPanelDragStart: null,
@@ -212,6 +216,7 @@ const els = {
   recordMarkersButton: document.getElementById("recordMarkersButton"),
   rankingPanelButton: document.getElementById("rankingPanelButton"),
   rankingPanel: document.getElementById("rankingPanel"),
+  recordPanel: document.getElementById("recordPanel"),
 };
 
 const ctx = els.canvas.getContext("2d");
@@ -1766,39 +1771,19 @@ function updateRankingPanel() {
   const forecastRankable = state.source === "forecast" && dataType === "temperature" && state.forecastLayer === "daily";
   const observedRankable = state.source === "observed" && ["daily", "temp"].includes(state.observedLayer);
   const day = forecastRankable ? forecastRankingData() : selectedExtremeDay();
-  const recordPanelOpen = state.showRecordMarkers && observedRankable;
-  els.rankingPanel.hidden = !(state.showRankingPanel || recordPanelOpen) || !(forecastRankable || observedRankable);
+  updateRecordPanel(observedRankable);
+  els.rankingPanel.hidden = !state.showRankingPanel || !(forecastRankable || observedRankable);
   els.rankingPanelButton?.classList.toggle("active", state.showRankingPanel);
   els.rankingPanelButton?.setAttribute("aria-pressed", state.showRankingPanel ? "true" : "false");
-  els.recordMarkersButton?.classList.toggle("active", recordPanelOpen);
-  els.recordMarkersButton?.setAttribute("aria-pressed", recordPanelOpen ? "true" : "false");
   if (els.rankingPanel.hidden) return;
   applyRankingPanelPosition();
   if (!day) {
-    els.rankingPanel.innerHTML = `<div class="ranking-head"><strong>${recordPanelOpen ? "記録更新" : "気温ランキング"}</strong></div><p class="ranking-empty">データを読み込めません。</p>${panelResizeHandles("ranking")}`;
+    els.rankingPanel.innerHTML = `<div class="ranking-head"><strong>気温ランキング</strong></div><p class="ranking-empty">データを読み込めません。</p>${panelResizeHandles("ranking")}`;
     applyPanelScale(els.rankingPanel, state.rankingPanelScale);
     wirePanelResize(els.rankingPanel, "ranking");
     return;
   }
   const status = rankingStatusInfo(day);
-  if (recordPanelOpen) {
-    const elementName = state.element === "temp" ? "気温" : state.element === "min" ? "最低気温" : "最高気温";
-    els.rankingPanel.innerHTML = `
-      <div class="ranking-head">
-        <div><div class="ranking-title-row"><strong>${escapeHtml(day.label || day.date)} ${elementName}の記録更新</strong><span class="ranking-status ${status.className}"><b>${status.label}</b><span>${status.text}</span></span></div><span>気象庁「観測史上1位の値 更新状況」</span></div>
-        <button type="button" id="rankingPanelCloseButton" aria-label="閉じる">×</button>
-      </div>
-      <div class="record-grid">${renderRecordList(day, "all_time")}${renderRecordList(day, "monthly")}</div>
-      ${panelResizeHandles("ranking")}`;
-    applyPanelScale(els.rankingPanel, state.rankingPanelScale);
-    wireRankingPanelDrag();
-    wirePanelResize(els.rankingPanel, "ranking");
-    document.getElementById("rankingPanelCloseButton")?.addEventListener("click", () => {
-      state.showRecordMarkers = false;
-      updateRankingPanel();
-    }, { once: true });
-    return;
-  }
   els.rankingPanel.innerHTML = `
     <div class="ranking-head">
       <div>
@@ -1837,6 +1822,37 @@ function updateRankingPanel() {
   }, { once: true });
 }
 
+function updateRecordPanel(observedRankable) {
+  if (!els.recordPanel) return;
+  const open = state.showRecordMarkers && observedRankable;
+  els.recordPanel.hidden = !open;
+  els.recordMarkersButton?.classList.toggle("active", open);
+  els.recordMarkersButton?.setAttribute("aria-pressed", open ? "true" : "false");
+  if (!open) return;
+  const day = selectedExtremeDay();
+  applyRecordPanelPosition();
+  if (!day) {
+    els.recordPanel.innerHTML = `<div class="ranking-head"><strong>気温記録更新</strong></div><p class="ranking-empty">データを読み込めません。</p>${panelResizeHandles("record")}`;
+  } else {
+    const status = rankingStatusInfo(day);
+    const elementName = state.element === "temp" ? "気温" : state.element === "min" ? "最低気温" : "最高気温";
+    els.recordPanel.innerHTML = `
+      <div class="ranking-head">
+        <div><div class="ranking-title-row"><strong>${escapeHtml(day.label || day.date)} ${elementName}の記録更新</strong><span class="ranking-status ${status.className}"><b>${status.label}</b><span>${status.text}</span></span></div><span>気象庁「観測史上1位の値 更新状況」</span></div>
+        <button type="button" id="recordPanelCloseButton" aria-label="閉じる">×</button>
+      </div>
+      <div class="record-grid">${renderRecordList(day, "all_time")}${renderRecordList(day, "monthly")}</div>
+      ${panelResizeHandles("record")}`;
+  }
+  applyPanelScale(els.recordPanel, state.recordPanelScale);
+  wireRecordPanelDrag();
+  wirePanelResize(els.recordPanel, "record");
+  document.getElementById("recordPanelCloseButton")?.addEventListener("click", () => {
+    state.showRecordMarkers = false;
+    updateRankingPanel();
+  }, { once: true });
+}
+
 function defaultRankingPanelPosition() {
   const wrapRect = els.canvasWrap?.getBoundingClientRect();
   const panelWidth = Math.min(580, Math.max(460, Math.round((wrapRect?.width || window.innerWidth) * 0.42)));
@@ -1868,6 +1884,27 @@ function applyRankingPanelPosition() {
   els.rankingPanel.style.top = `${position.top}px`;
 }
 
+function defaultRecordPanelPosition() {
+  return { left: 16, top: 16 };
+}
+
+function clampRecordPanelPosition(position) {
+  const wrapRect = els.canvasWrap?.getBoundingClientRect();
+  const panelRect = els.recordPanel?.getBoundingClientRect();
+  return {
+    left: Math.max(10, Math.min((wrapRect?.width || window.innerWidth) - (panelRect?.width || 560) - 10, position.left)),
+    top: Math.max(10, Math.min((wrapRect?.height || window.innerHeight) - (panelRect?.height || 380) - 10, position.top)),
+  };
+}
+
+function applyRecordPanelPosition() {
+  if (!els.recordPanel) return;
+  if (!state.recordPanelPosition) state.recordPanelPosition = defaultRecordPanelPosition();
+  state.recordPanelPosition = clampRecordPanelPosition(state.recordPanelPosition);
+  els.recordPanel.style.left = `${state.recordPanelPosition.left}px`;
+  els.recordPanel.style.top = `${state.recordPanelPosition.top}px`;
+}
+
 function applyPanelScale(panel, scale) {
   if (!panel) return;
   panel.style.setProperty("--panel-scale", String(scale));
@@ -1884,13 +1921,15 @@ document.addEventListener("pointerdown", (event) => {
   if (!handle) return;
   const kind = handle.dataset.panelResize;
   const corner = handle.dataset.panelCorner || "se";
-  const panel = kind === "ranking" ? els.rankingPanel : els.pointChartPanel;
+  const panel = kind === "ranking" ? els.rankingPanel : kind === "record" ? els.recordPanel : els.pointChartPanel;
   if (!panel) return;
   event.preventDefault();
   event.stopPropagation();
   const rect = panel.getBoundingClientRect();
   const position = kind === "ranking"
     ? (state.rankingPanelPosition || defaultRankingPanelPosition())
+    : kind === "record"
+      ? (state.recordPanelPosition || defaultRecordPanelPosition())
     : (state.pointChartPanelPosition || defaultPointChartPanelPosition());
   state.panelResizeStart = {
     kind,
@@ -1898,7 +1937,7 @@ document.addEventListener("pointerdown", (event) => {
     panel,
     x: event.clientX,
     y: event.clientY,
-    scale: kind === "ranking" ? state.rankingPanelScale : state.pointChartPanelScale,
+    scale: kind === "ranking" ? state.rankingPanelScale : kind === "record" ? state.recordPanelScale : state.pointChartPanelScale,
     width: rect.width,
     height: rect.height,
     left: position.left,
@@ -1922,11 +1961,14 @@ window.addEventListener("pointermove", (event) => {
     top: start.top + (start.corner.includes("n") ? start.height * (1 - scaleRatio) : 0),
   };
   if (start.kind === "ranking") state.rankingPanelScale = scale;
+  else if (start.kind === "record") state.recordPanelScale = scale;
   else state.pointChartPanelScale = scale;
   if (start.kind === "ranking") state.rankingPanelPosition = position;
+  else if (start.kind === "record") state.recordPanelPosition = position;
   else state.pointChartPanelPosition = position;
   applyPanelScale(start.panel, scale);
   if (start.kind === "ranking") applyRankingPanelPosition();
+  else if (start.kind === "record") applyRecordPanelPosition();
   else applyPointChartPanelPosition();
 });
 
@@ -2024,6 +2066,36 @@ function wireRankingPanelDrag() {
       // Pointer capture may already be released by the browser.
     }
     els.rankingPanel?.classList.remove("dragging");
+  };
+  head.addEventListener("pointerup", endDrag);
+  head.addEventListener("pointercancel", endDrag);
+}
+
+function wireRecordPanelDrag() {
+  const head = els.recordPanel?.querySelector(".ranking-head");
+  if (!head) return;
+  head.addEventListener("pointerdown", (event) => {
+    if (event.target.closest("button")) return;
+    state.recordPanelDragging = true;
+    const current = state.recordPanelPosition || defaultRecordPanelPosition();
+    state.recordPanelDragStart = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, left: current.left, top: current.top };
+    head.setPointerCapture?.(event.pointerId);
+    els.recordPanel?.classList.add("dragging");
+  });
+  head.addEventListener("pointermove", (event) => {
+    if (!state.recordPanelDragging || !state.recordPanelDragStart || state.panelResizeStart) return;
+    state.recordPanelPosition = clampRecordPanelPosition({
+      left: state.recordPanelDragStart.left + event.clientX - state.recordPanelDragStart.x,
+      top: state.recordPanelDragStart.top + event.clientY - state.recordPanelDragStart.y,
+    });
+    applyRecordPanelPosition();
+  });
+  const endDrag = (event) => {
+    if (!state.recordPanelDragging) return;
+    state.recordPanelDragging = false;
+    state.recordPanelDragStart = null;
+    try { head.releasePointerCapture?.(event.pointerId); } catch { /* already released */ }
+    els.recordPanel?.classList.remove("dragging");
   };
   head.addEventListener("pointerup", endDrag);
   head.addEventListener("pointercancel", endDrag);
@@ -4474,14 +4546,12 @@ els.weatherMapOpacityRange?.addEventListener("input", () => {
 els.recordMarkersButton?.addEventListener("click", () => {
   if (els.recordMarkersButton.disabled) return;
   state.showRecordMarkers = !state.showRecordMarkers;
-  if (state.showRecordMarkers) state.showRankingPanel = false;
   updateRankingPanel();
 });
 
 els.rankingPanelButton?.addEventListener("click", () => {
   if (els.rankingPanelButton.disabled) return;
   state.showRankingPanel = !state.showRankingPanel;
-  if (state.showRankingPanel) state.showRecordMarkers = false;
   updateRankingPanel();
 });
 
