@@ -1908,6 +1908,17 @@ dd {
   display: none;
 }
 
+.panel-height-resize-handle {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  top: -7px;
+  height: 14px;
+  z-index: 4;
+  cursor: ns-resize;
+  touch-action: none;
+}
+
 .panel-resize-handle.nw { left: -12px; top: -12px; cursor: nwse-resize; }
 .panel-resize-handle.ne { right: -12px; top: -12px; cursor: nesw-resize; }
 .panel-resize-handle.sw { left: -12px; bottom: -12px; cursor: nesw-resize; }
