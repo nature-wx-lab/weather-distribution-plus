@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-02T10:42:04+09:00",
+  "generated_at": "2026-07-02T10:51:55+09:00",
   "source": "JMA天気分布予報 targetTimes.json / *_temp_point / wm / r3 / s3 GeoJSON / VPFD地域時系列予報",
   "service_date": "2026-07-02",
   "daily_rollover_hour_jst": 6,
