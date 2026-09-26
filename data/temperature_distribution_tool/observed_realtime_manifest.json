@@ -1,0 +1,308 @@
+{
+  "generator_version": 11,
+  "generated_at": "2026-09-27T05:32:00.597349+09:00",
+  "latest_time": "2026-09-27T05:20:00+09:00",
+  "source": "JMA AMeDAS latest_time.txt / data/map/{YYYYMMDDHHMM00}.json 10-minute observations",
+  "realtime_layers": {
+    "station_observations": {
+      "json": "observed_realtime_station_observations.json",
+      "csv": "observed_realtime_station_observations.csv",
+      "latest_time": "2026-09-27T05:20:00+09:00",
+      "station_count": 1284,
+      "elements": {
+        "temperature": {
+          "field": "temperature_c",
+          "unit": "degC",
+          "station_count": 916
+        },
+        "precipitation_1h": {
+          "field": "precipitation_1h_mm",
+          "unit": "mm",
+          "station_count": 1283
+        },
+        "wind_speed": {
+          "field": "wind_speed_ms",
+          "unit": "m/s",
+          "station_count": 915
+        },
+        "wind_direction": {
+          "field": "wind_direction_deg",
+          "unit": "degree",
+          "station_count": 915
+        }
+      },
+      "quality_fields": "JMA raw numeric quality codes"
+    },
+    "temperature_races": {
+      "json": "observed_daily_max_race.json",
+      "delivery_schema": 1,
+      "index_json": "observed_temperature_race_index_4c6008633178838f.json",
+      "index_sha256": "4c6008633178838f6ba3dbc2b712a4dba924d588c864fac29f7efca93b77f03e",
+      "index_bytes": 3604,
+      "index_history": [
+        "observed_temperature_race_index_4c6008633178838f.json",
+        "observed_temperature_race_index_fa3af1c5c46f9640.json",
+        "observed_temperature_race_index_8b4ec625dd619885.json"
+      ],
+      "slice_count": 14,
+      "total_slice_bytes": 7259317,
+      "maximum_slice_bytes": 687056,
+      "stations_json": "observed_temperature_race_stations_44b49032f68684be.json",
+      "stations_bytes": 126019,
+      "dates": [
+        "2026-09-21",
+        "2026-09-22",
+        "2026-09-23",
+        "2026-09-24",
+        "2026-09-25",
+        "2026-09-26",
+        "2026-09-27"
+      ],
+      "elements": [
+        "max",
+        "min"
+      ],
+      "latest_time": "2026-09-27T05:20:00+09:00",
+      "frame_interval_minutes": 10,
+      "top_n": 100,
+      "station_count": 915,
+      "method": "hybrid_10minute_running_extreme_plus_jma_published_daily_extreme",
+      "maximum_window": "00:00-23:50; current day through latest observation",
+      "minimum_window": "previous day 18:00-target day 09:00"
+    },
+    "daily_max_race": {
+      "json": "observed_daily_max_race.json",
+      "delivery_schema": 1,
+      "index_json": "observed_temperature_race_index_4c6008633178838f.json",
+      "index_history": [
+        "observed_temperature_race_index_4c6008633178838f.json",
+        "observed_temperature_race_index_fa3af1c5c46f9640.json",
+        "observed_temperature_race_index_8b4ec625dd619885.json"
+      ],
+      "dates": [
+        "2026-09-21",
+        "2026-09-22",
+        "2026-09-23",
+        "2026-09-24",
+        "2026-09-25",
+        "2026-09-26",
+        "2026-09-27"
+      ],
+      "elements": [
+        "max",
+        "min"
+      ],
+      "latest_time": "2026-09-27T05:20:00+09:00",
+      "frame_interval_minutes": 10,
+      "top_n": 100,
+      "station_count": 915,
+      "method": "hybrid_10minute_running_extreme_plus_jma_published_daily_extreme"
+    }
+  },
+  "daily_distribution_source": "JMA MDRR all-station max/min tables, IDW interpolated to the display grid",
+  "days": 7,
+  "slots": [
+    {
+      "id": "20260921_min",
+      "label": "21日最低",
+      "element": "min",
+      "target_date": "2026-09-21",
+      "target_time": "2026-09-21",
+      "status": "available",
+      "source": "daily",
+      "station_reference": "observed_20260921_min_station_values.json",
+      "station_reference_count": 914,
+      "previous_comparison_date": "2026-09-20",
+      "previous_comparison_source": "observed_daily",
+      "previous_comparison_method": "jma_mdrr_previous_difference"
+    },
+    {
+      "id": "20260921_max",
+      "label": "21日最高",
+      "element": "max",
+      "target_date": "2026-09-21",
+      "target_time": "2026-09-21",
+      "status": "available",
+      "source": "daily",
+      "station_reference": "observed_20260921_max_station_values.json",
+      "station_reference_count": 914,
+      "previous_comparison_date": "2026-09-20",
+      "previous_comparison_source": "observed_daily",
+      "previous_comparison_method": "jma_mdrr_previous_difference"
+    },
+    {
+      "id": "20260922_min",
+      "label": "22日最低",
+      "element": "min",
+      "target_date": "2026-09-22",
+      "target_time": "2026-09-22",
+      "status": "available",
+      "source": "daily",
+      "station_reference": "observed_20260922_min_station_values.json",
+      "station_reference_count": 914,
+      "previous_comparison_date": "2026-09-21",
+      "previous_comparison_source": "observed_daily",
+      "previous_comparison_method": "jma_mdrr_previous_difference"
+    },
+    {
+      "id": "20260922_max",
+      "label": "22日最高",
+      "element": "max",
+      "target_date": "2026-09-22",
+      "target_time": "2026-09-22",
+      "status": "available",
+      "source": "daily",
+      "station_reference": "observed_20260922_max_station_values.json",
+      "station_reference_count": 914,
+      "previous_comparison_date": "2026-09-21",
+      "previous_comparison_source": "observed_daily",
+      "previous_comparison_method": "jma_mdrr_previous_difference"
+    },
+    {
+      "id": "20260923_min",
+      "label": "23日最低",
+      "element": "min",
+      "target_date": "2026-09-23",
+      "target_time": "2026-09-23",
+      "status": "available",
+      "source": "daily",
+      "station_reference": "observed_20260923_min_station_values.json",
+      "station_reference_count": 914,
+      "previous_comparison_date": "2026-09-22",
+      "previous_comparison_source": "observed_daily",
+      "previous_comparison_method": "jma_mdrr_previous_difference"
+    },
+    {
+      "id": "20260923_max",
+      "label": "23日最高",
+      "element": "max",
+      "target_date": "2026-09-23",
+      "target_time": "2026-09-23",
+      "status": "available",
+      "source": "daily",
+      "station_reference": "observed_20260923_max_station_values.json",
+      "station_reference_count": 914,
+      "previous_comparison_date": "2026-09-22",
+      "previous_comparison_source": "observed_daily",
+      "previous_comparison_method": "jma_mdrr_previous_difference"
+    },
+    {
+      "id": "20260924_min",
+      "label": "24日最低",
+      "element": "min",
+      "target_date": "2026-09-24",
+      "target_time": "2026-09-24",
+      "status": "available",
+      "source": "daily",
+      "station_reference": "observed_20260924_min_station_values.json",
+      "station_reference_count": 910,
+      "previous_comparison_date": "2026-09-23",
+      "previous_comparison_source": "observed_daily",
+      "previous_comparison_method": "jma_mdrr_previous_difference"
+    },
+    {
+      "id": "20260924_max",
+      "label": "24日最高",
+      "element": "max",
+      "target_date": "2026-09-24",
+      "target_time": "2026-09-24",
+      "status": "available",
+      "source": "daily",
+      "station_reference": "observed_20260924_max_station_values.json",
+      "station_reference_count": 910,
+      "previous_comparison_date": "2026-09-23",
+      "previous_comparison_source": "observed_daily",
+      "previous_comparison_method": "jma_mdrr_previous_difference"
+    },
+    {
+      "id": "20260925_min",
+      "label": "25日最低",
+      "element": "min",
+      "target_date": "2026-09-25",
+      "target_time": "2026-09-25",
+      "status": "available",
+      "source": "daily",
+      "station_reference": "observed_20260925_min_station_values.json",
+      "station_reference_count": 902,
+      "previous_comparison_date": "2026-09-24",
+      "previous_comparison_source": "observed_daily",
+      "previous_comparison_method": "jma_mdrr_previous_difference"
+    },
+    {
+      "id": "20260925_max",
+      "label": "25日最高",
+      "element": "max",
+      "target_date": "2026-09-25",
+      "target_time": "2026-09-25",
+      "status": "available",
+      "source": "daily",
+      "station_reference": "observed_20260925_max_station_values.json",
+      "station_reference_count": 902,
+      "previous_comparison_date": "2026-09-24",
+      "previous_comparison_source": "observed_daily",
+      "previous_comparison_method": "jma_mdrr_previous_difference"
+    },
+    {
+      "id": "20260926_min",
+      "label": "26日最低",
+      "element": "min",
+      "target_date": "2026-09-26",
+      "target_time": "2026-09-26",
+      "status": "available",
+      "source": "daily",
+      "station_reference": "observed_20260926_min_station_values.json",
+      "station_reference_count": 914,
+      "previous_comparison_date": "2026-09-25",
+      "previous_comparison_source": "observed_daily",
+      "previous_comparison_method": "jma_mdrr_previous_difference"
+    },
+    {
+      "id": "20260926_max",
+      "label": "26日最高",
+      "element": "max",
+      "target_date": "2026-09-26",
+      "target_time": "2026-09-26",
+      "status": "available",
+      "source": "daily",
+      "station_reference": "observed_20260926_max_station_values.json",
+      "station_reference_count": 914,
+      "previous_comparison_date": "2026-09-25",
+      "previous_comparison_source": "observed_daily",
+      "previous_comparison_method": "jma_mdrr_previous_difference"
+    },
+    {
+      "id": "20260927_min",
+      "label": "27日最低",
+      "element": "min",
+      "target_date": "2026-09-27",
+      "target_time": "2026-09-27T05:20:00+09:00",
+      "status": "available",
+      "source": "realtime",
+      "station_reference": "observed_20260927_min_station_values.json",
+      "station_reference_count": 915,
+      "previous_comparison_date": "2026-09-26",
+      "previous_comparison_source": "observed_daily",
+      "previous_comparison_method": "difference_of_observed_grids"
+    },
+    {
+      "id": "20260927_max",
+      "label": "27日最高",
+      "element": "max",
+      "target_date": "2026-09-27",
+      "target_time": "2026-09-27T05:20:00+09:00",
+      "status": "available",
+      "source": "realtime",
+      "station_reference": "observed_20260927_max_station_values.json",
+      "station_reference_count": 915,
+      "previous_comparison_date": "2026-09-26",
+      "previous_comparison_source": "observed_daily",
+      "previous_comparison_method": "difference_of_observed_grids"
+    }
+  ],
+  "station_count": 915,
+  "realtime_timeseries_station_count": 915,
+  "daily_distribution_station_count": 915,
+  "grid_count": 31296,
+  "quality_policy": "Raw station feed retains JMA quality codes; 10-minute interpolation and extrema use quality code 0 only. Ranking corrections use JMA MDRR's published daily maximum/minimum and occurrence minute while retaining provisional markers. Other MDRR grid values marked ] or ) remain excluded.",
+  "daily_refresh_date": "2026-09-27"
+}
