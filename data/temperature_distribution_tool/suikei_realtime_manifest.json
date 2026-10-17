@@ -1,0 +1,2674 @@
+{
+  "schema_version": 3,
+  "generated_at": "2026-10-17T16:26:02.406487Z",
+  "source": "JMA estimated weather distribution (推計気象分布)",
+  "source_target_times": "https://www.jma.go.jp/bosai/jmatile/data/suikeikishou/targetTimes.json",
+  "basetime": "20261017160000",
+  "validtime": "20261017160000",
+  "slot_count": 48,
+  "tile_size": 512,
+  "available_zooms": [
+    8
+  ],
+  "display_min_zoom": 4,
+  "display_max_zoom": 12,
+  "native_zoom": 8,
+  "availability": true,
+  "resolution_note": "Official ~1 km hourly analyses; the latest 48 target times are mirrored. Native z=8 tiles are scaled outside the native zoom.",
+  "bounds": {
+    "west": 118.0,
+    "south": 20.0,
+    "east": 150.0,
+    "north": 48.0
+  },
+  "layers": {
+    "temperature": {
+      "source_element": "temp",
+      "tile_template": "suikei_tiles/20261017160000/temperature/{z}/{x}/{y}.png",
+      "tile_count": 169,
+      "visible_tile_count": 40,
+      "overview_file": "suikei_overviews/20261017160000/temperature.png",
+      "overview_bounds": [
+        115.3125,
+        19.31114336,
+        151.875,
+        48.92249926
+      ],
+      "overview_width": 1664,
+      "overview_height": 1664,
+      "overview_source_zoom": 8
+    },
+    "weather": {
+      "source_element": "wthr",
+      "tile_template": "suikei_tiles/20261017160000/weather/{z}/{x}/{y}.png",
+      "tile_count": 169,
+      "visible_tile_count": 40,
+      "overview_file": "suikei_overviews/20261017160000/weather.png",
+      "overview_bounds": [
+        115.3125,
+        19.31114336,
+        151.875,
+        48.92249926
+      ],
+      "overview_width": 1664,
+      "overview_height": 1664,
+      "overview_source_zoom": 8
+    },
+    "sunshine": {
+      "source_element": "suns1h",
+      "tile_template": "suikei_tiles/20261017160000/sunshine/{z}/{x}/{y}.png",
+      "tile_count": 169,
+      "visible_tile_count": 40,
+      "overview_file": "suikei_overviews/20261017160000/sunshine.png",
+      "overview_bounds": [
+        115.3125,
+        19.31114336,
+        151.875,
+        48.92249926
+      ],
+      "overview_width": 1664,
+      "overview_height": 1664,
+      "overview_source_zoom": 8
+    }
+  },
+  "temperature_labels": {
+    "file": "suikei_temperature_labels.json",
+    "validtime": "20261017160000",
+    "label_count": 5914,
+    "precision_c": 0.5
+  },
+  "slots": [
+    {
+      "basetime": "20261015170000",
+      "validtime": "20261015170000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261015170000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261015170000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261015170000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261015170000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261015170000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261015170000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261015180000",
+      "validtime": "20261015180000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261015180000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261015180000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261015180000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261015180000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261015180000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261015180000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261015190000",
+      "validtime": "20261015190000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261015190000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261015190000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261015190000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261015190000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261015190000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261015190000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261015200000",
+      "validtime": "20261015200000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261015200000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261015200000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261015200000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261015200000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261015200000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261015200000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261015210000",
+      "validtime": "20261015210000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261015210000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261015210000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261015210000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261015210000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261015210000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261015210000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261015220000",
+      "validtime": "20261015220000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261015220000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261015220000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261015220000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261015220000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261015220000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261015220000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261015230000",
+      "validtime": "20261015230000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261015230000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261015230000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261015230000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261015230000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261015230000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261015230000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261016000000",
+      "validtime": "20261016000000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261016000000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016000000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261016000000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016000000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261016000000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016000000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261016010000",
+      "validtime": "20261016010000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261016010000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016010000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261016010000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016010000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261016010000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016010000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261016020000",
+      "validtime": "20261016020000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261016020000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016020000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261016020000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016020000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261016020000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016020000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261016030000",
+      "validtime": "20261016030000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261016030000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016030000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261016030000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016030000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261016030000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016030000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261016040000",
+      "validtime": "20261016040000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261016040000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016040000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261016040000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016040000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261016040000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016040000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261016050000",
+      "validtime": "20261016050000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261016050000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016050000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261016050000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016050000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261016050000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016050000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261016060000",
+      "validtime": "20261016060000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261016060000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016060000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261016060000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016060000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261016060000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016060000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261016070000",
+      "validtime": "20261016070000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261016070000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016070000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261016070000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016070000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261016070000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016070000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261016080000",
+      "validtime": "20261016080000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261016080000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016080000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261016080000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016080000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261016080000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016080000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261016090000",
+      "validtime": "20261016090000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261016090000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016090000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261016090000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016090000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261016090000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016090000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261016100000",
+      "validtime": "20261016100000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261016100000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016100000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261016100000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016100000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261016100000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016100000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261016110000",
+      "validtime": "20261016110000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261016110000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016110000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261016110000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016110000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261016110000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016110000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261016120000",
+      "validtime": "20261016120000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261016120000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016120000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261016120000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016120000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261016120000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016120000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261016130000",
+      "validtime": "20261016130000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261016130000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016130000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261016130000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016130000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261016130000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016130000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261016140000",
+      "validtime": "20261016140000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261016140000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016140000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261016140000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016140000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261016140000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016140000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261016150000",
+      "validtime": "20261016150000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261016150000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016150000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261016150000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016150000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261016150000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016150000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261016160000",
+      "validtime": "20261016160000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261016160000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016160000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261016160000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016160000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261016160000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016160000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261016170000",
+      "validtime": "20261016170000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261016170000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016170000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261016170000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016170000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261016170000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016170000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261016180000",
+      "validtime": "20261016180000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261016180000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016180000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261016180000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016180000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261016180000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016180000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261016190000",
+      "validtime": "20261016190000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261016190000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016190000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261016190000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016190000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261016190000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016190000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261016200000",
+      "validtime": "20261016200000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261016200000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016200000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261016200000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016200000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261016200000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016200000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261016210000",
+      "validtime": "20261016210000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261016210000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016210000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261016210000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016210000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261016210000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016210000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261016220000",
+      "validtime": "20261016220000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261016220000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016220000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261016220000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016220000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261016220000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016220000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261016230000",
+      "validtime": "20261016230000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261016230000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016230000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261016230000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016230000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261016230000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261016230000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261017000000",
+      "validtime": "20261017000000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261017000000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017000000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261017000000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017000000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261017000000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017000000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261017010000",
+      "validtime": "20261017010000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261017010000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017010000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261017010000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017010000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261017010000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017010000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261017020000",
+      "validtime": "20261017020000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261017020000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017020000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261017020000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017020000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261017020000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017020000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261017030000",
+      "validtime": "20261017030000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261017030000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017030000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261017030000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017030000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261017030000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017030000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261017040000",
+      "validtime": "20261017040000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261017040000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017040000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261017040000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017040000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261017040000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017040000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261017050000",
+      "validtime": "20261017050000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261017050000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017050000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261017050000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017050000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261017050000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017050000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261017060000",
+      "validtime": "20261017060000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261017060000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017060000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261017060000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017060000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261017060000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017060000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261017070000",
+      "validtime": "20261017070000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261017070000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017070000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261017070000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017070000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261017070000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017070000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261017080000",
+      "validtime": "20261017080000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261017080000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017080000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261017080000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017080000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261017080000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017080000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261017090000",
+      "validtime": "20261017090000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261017090000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017090000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261017090000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017090000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261017090000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017090000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261017100000",
+      "validtime": "20261017100000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261017100000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017100000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261017100000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017100000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261017100000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017100000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261017110000",
+      "validtime": "20261017110000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261017110000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017110000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261017110000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017110000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261017110000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017110000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261017120000",
+      "validtime": "20261017120000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261017120000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017120000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261017120000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017120000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261017120000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017120000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261017130000",
+      "validtime": "20261017130000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261017130000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017130000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261017130000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017130000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261017130000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017130000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261017140000",
+      "validtime": "20261017140000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261017140000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017140000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261017140000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017140000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261017140000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017140000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261017150000",
+      "validtime": "20261017150000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261017150000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017150000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261017150000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017150000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261017150000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017150000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    },
+    {
+      "basetime": "20261017160000",
+      "validtime": "20261017160000",
+      "layers": {
+        "temperature": {
+          "source_element": "temp",
+          "tile_template": "suikei_tiles/20261017160000/temperature/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017160000/temperature.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "weather": {
+          "source_element": "wthr",
+          "tile_template": "suikei_tiles/20261017160000/weather/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017160000/weather.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        },
+        "sunshine": {
+          "source_element": "suns1h",
+          "tile_template": "suikei_tiles/20261017160000/sunshine/{z}/{x}/{y}.png",
+          "tile_count": 169,
+          "visible_tile_count": 40,
+          "overview_file": "suikei_overviews/20261017160000/sunshine.png",
+          "overview_bounds": [
+            115.3125,
+            19.31114336,
+            151.875,
+            48.92249926
+          ],
+          "overview_width": 1664,
+          "overview_height": 1664,
+          "overview_source_zoom": 8
+        }
+      }
+    }
+  ]
+}
