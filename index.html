@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>天気分布予報プラス</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-KHVBV5L8HC"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-KHVBV5L8HC');
+    </script>
+  <link rel="stylesheet" href="./styles.css?v=20260730-map-comparison-mode1" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="title-row">
+        <h1>天気分布予報プラス</h1>
+        <p>予測・実況・差分を地図で比較</p>
+        <a
+          class="guide-link"
+          href="https://note.com/nature_wx_lab/n/nb9b18cecc3a7"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="天気分布予報プラスの使い方をnoteで読む"
+        >
+          <span class="guide-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <path d="M5 4.75A2.75 2.75 0 0 1 7.75 2H19v16.5h-9.75A2.25 2.25 0 0 0 7 20.75V21H5V4.75Z"></path>
+              <path d="M7 5.25A1.25 1.25 0 0 1 8.25 4H17v12.5H9.25c-.82 0-1.6.27-2.25.76V5.25Z"></path>
+              <path d="M9.25 7.25h5.5M9.25 10.25h5.5M9.25 13.25h3.5"></path>
+            </svg>
+          </span>
+          <span>使い方</span>
+        </a>
+      </div>
+      <div class="header-actions">
+        <a
+          class="brand brand-link"
+          href="https://naturewxlab.com/"
+          aria-label="NatureWxLab公式ホームページへ戻る"
+          title="NatureWxLab公式ホームページへ"
+        >
+          <span class="brand-home-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <path d="M3.5 10.5 12 3l8.5 7.5"></path>
+              <path d="M5.5 9.5V21h13V9.5M9.5 21v-7h5v7"></path>
+            </svg>
+          </span>
+          <span class="brand-label">NatureWxLab</span>
+        </a>
+        <nav class="sns-links" aria-label="Nature Wx Lab SNSリンク">
+          <a class="sns-link youtube" href="https://www.youtube.com/@nature_wx_lab" target="_blank" rel="noopener noreferrer">
+            <span class="sns-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <rect x="2" y="5" width="20" height="14" rx="4" fill="#ff0033"></rect>
+                <path d="M10 8.8v6.4l5.4-3.2z" fill="#fff"></path>
+              </svg>
+            </span>
+            <span>YouTube</span>
+          </a>
+          <a class="sns-link note" href="https://note.com/nature_wx_lab" target="_blank" rel="noopener noreferrer">
+            <span class="sns-mark note-mark" aria-hidden="true">n</span>
+            <span>note</span>
+          </a>
+          <a class="sns-link x" href="https://x.com/nature_wx_lab" target="_blank" rel="noopener noreferrer">
+            <span class="sns-mark x-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <rect width="24" height="24" fill="#000"></rect>
+                <path d="M4.2 3.2h4.1l4.2 5.7 5-5.7h2.3l-6.2 7.1 6.4 10.5h-4.1l-4.6-6.4-5.6 6.4H3.4l6.8-7.7L4.2 3.2Zm3.0 1.7 9.6 14.2h1.1L8.3 4.9H7.2Z" fill="#fff"></path>
+              </svg>
+            </span>
+            <span>X</span>
+          </a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="app">
+      <aside class="controls" aria-label="表示条件">
+        <div class="control-group tabs" role="tablist" aria-label="データ種別">
+          <button class="active" type="button" data-source="forecast">予測</button>
+          <button type="button" data-source="observed">実況</button>
+        </div>
+
+        <div class="control-block layer-control-block">
+          <span id="layerControlHeading">予測レイヤ</span>
+          <select id="forecastLayerSelect" class="visually-hidden" aria-label="予測レイヤ">
+            <option value="daily">日最低・日最高</option>
+            <option value="temp3h">3時間気温</option>
+            <option value="weather3h">3時間天気</option>
+            <option value="precip3h">3時間降水量</option>
+            <option value="snow3h">3時間降雪量</option>
+          </select>
+          <div id="forecastLayerButtons" class="layer-buttons" aria-label="予測レイヤ">
+            <button class="active" type="button" data-layer="daily" title="日最低・日最高">
+              <span class="layer-icon layer-icon-daily" aria-hidden="true">
+                <svg viewBox="0 0 64 64" focusable="false">
+                  <path class="icon-stroke" d="M32 8a8 8 0 0 0-8 8v22.2a14 14 0 1 0 16 0V16a8 8 0 0 0-8-8Z"></path>
+                  <path class="icon-fill" d="M32 26v22"></path>
+                  <circle class="icon-fill" cx="32" cy="48" r="8"></circle>
+                  <path class="icon-fill" d="M13 16l-6 7h4v11h4V23h4l-6-7Z"></path>
+                  <path class="icon-fill" d="M51 48l6-7h-4V30h-4v11h-4l6 7Z"></path>
+                </svg>
+              </span>
+              <span class="layer-label">日最低<br />日最高</span>
+            </button>
+            <button type="button" data-layer="temp3h" title="3時間気温">
+              <span class="layer-icon layer-icon-temp" aria-hidden="true">
+                <svg viewBox="0 0 64 64" focusable="false">
+                  <path class="icon-stroke" d="M28 8a9 9 0 0 0-9 9v23.5a16 16 0 1 0 18 0V17a9 9 0 0 0-9-9Z"></path>
+                  <path class="icon-fill" d="M28 24v24"></path>
+                  <circle class="icon-fill" cx="28" cy="48" r="8"></circle>
+                  <path class="icon-stroke small" d="M43 18h10M43 28h10M43 38h10"></path>
+                </svg>
+              </span>
+              <span class="layer-label">3時間<br />気温</span>
+            </button>
+            <button type="button" data-layer="weather3h" title="3時間天気">
+              <span class="layer-icon layer-icon-weather" aria-hidden="true">
+                <svg viewBox="0 0 64 64" focusable="false">
+                  <circle class="sun-fill" cx="43" cy="22" r="12"></circle>
+                  <path class="sun-fill" d="M43 4v8M43 32v8M25 22h8M53 22h8M30.5 9.5l5.5 5.5M50 29l5.5 5.5M55.5 9.5 50 15"></path>
+                  <path class="cloud-fill" d="M17 43h29a11 11 0 0 0 0-22 15 15 0 0 0-28-5A13.5 13.5 0 0 0 17 43Z"></path>
+                  <path class="rain-fill" d="M18 49l-3 7M29 49l-3 7M40 49l-3 7"></path>
+                </svg>
+              </span>
+              <span class="layer-label">3時間<br />天気</span>
+            </button>
+            <button type="button" data-layer="precip3h" title="3時間降水量">
+              <span class="layer-icon layer-icon-rain" aria-hidden="true">
+                <svg viewBox="0 0 64 64" focusable="false">
+                  <path class="cloud-fill darker" d="M18 39h31a11 11 0 0 0 0-22 15 15 0 0 0-28-5A13.5 13.5 0 0 0 18 39Z"></path>
+                  <path class="rain-drop" d="M18 45c-5 8-5 12 0 12s5-4 0-12ZM32 45c-5 8-5 12 0 12s5-4 0-12ZM46 45c-5 8-5 12 0 12s5-4 0-12Z"></path>
+                </svg>
+              </span>
+              <span class="layer-label">3時間<br />降水量</span>
+            </button>
+            <button type="button" data-layer="snow3h" title="3時間降雪量">
+              <span class="layer-icon layer-icon-snow" aria-hidden="true">
+                <svg viewBox="0 0 64 64" focusable="false">
+                  <path class="cloud-fill pale" d="M18 35h31a11 11 0 0 0 0-22 15 15 0 0 0-28-5A13.5 13.5 0 0 0 18 35Z"></path>
+                  <path class="snow-stroke" d="M18 47v10M13.7 49.5l8.6 5M22.3 49.5l-8.6 5M34 43v10M29.7 45.5l8.6 5M38.3 45.5l-8.6 5M50 47v10M45.7 49.5l8.6 5M54.3 49.5l-8.6 5"></path>
+                </svg>
+              </span>
+              <span class="layer-label">3時間<br />降雪量</span>
+            </button>
+          </div>
+          <div id="observedLayerButtons" class="observed-layer-buttons" aria-label="実況レイヤ" hidden>
+            <button type="button" data-observed-layer="daily" title="最高・最低気温">
+              <span class="observed-layer-icon" aria-hidden="true"><svg viewBox="0 0 64 64"><path class="icon-stroke" d="M32 8a8 8 0 0 0-8 8v22.2a14 14 0 1 0 16 0V16a8 8 0 0 0-8-8Z"></path><path class="icon-fill" d="M32 26v22"></path><circle class="icon-fill" cx="32" cy="48" r="8"></circle><path class="icon-fill" d="M13 16l-6 7h4v11h4V23h4l-6-7ZM51 48l6-7h-4V30h-4v11h-4l6 7Z"></path></svg></span>
+              <span class="observed-layer-label">最高/最低<br />気温</span>
+            </button>
+            <button type="button" data-observed-layer="temp" title="実況気温">
+              <span class="observed-layer-icon" aria-hidden="true"><svg viewBox="0 0 64 64"><path class="icon-stroke" d="M28 8a9 9 0 0 0-9 9v23.5a16 16 0 1 0 18 0V17a9 9 0 0 0-9-9Z"></path><path class="icon-fill" d="M28 24v24"></path><circle class="icon-fill" cx="28" cy="48" r="8"></circle><path class="icon-stroke small" d="M43 18h10M43 28h10M43 38h10"></path></svg></span>
+              <span class="observed-layer-label">実況<br />気温</span>
+            </button>
+            <button type="button" data-observed-layer="precip1h" title="1時間降水量" hidden>
+              <span class="observed-layer-icon" aria-hidden="true"><svg viewBox="0 0 64 64"><path class="cloud-fill" d="M18 39h31a11 11 0 0 0 0-22 15 15 0 0 0-28-5A13.5 13.5 0 0 0 18 39Z"></path><path class="rain-drop" d="M18 45c-5 8-5 12 0 12s5-4 0-12ZM32 45c-5 8-5 12 0 12s5-4 0-12ZM46 45c-5 8-5 12 0 12s5-4 0-12Z"></path></svg></span>
+              <span class="observed-layer-label">1時間<br />降水量</span>
+            </button>
+            <button type="button" data-observed-layer="wind" title="風向・風速" hidden>
+              <span class="observed-layer-icon" aria-hidden="true"><svg viewBox="0 0 64 64"><path class="wind-stroke" d="M7 20h31c10 0 10-13 1-13-5 0-7 3-7 6M7 32h43c10 0 10 14 0 14-5 0-7-3-7-6M7 44h24"></path></svg></span>
+              <span class="observed-layer-label">風向・風速</span>
+            </button>
+            <button type="button" data-observed-layer="weather" title="推定天気">
+              <span class="observed-layer-icon" aria-hidden="true"><svg viewBox="0 0 64 64"><circle class="sun-fill" cx="43" cy="22" r="12"></circle><path class="cloud-fill" d="M17 43h29a11 11 0 0 0 0-22 15 15 0 0 0-28-5A13.5 13.5 0 0 0 17 43Z"></path><path class="rain-stroke" d="M18 49l-3 7M29 49l-3 7M40 49l-3 7"></path></svg></span>
+              <span class="observed-layer-label">推定天気</span>
+            </button>
+            <button type="button" data-observed-layer="sunshine" title="日照時間">
+              <span class="observed-layer-icon" aria-hidden="true"><svg viewBox="0 0 64 64"><circle class="sun-fill" cx="32" cy="32" r="13"></circle><path class="sun-stroke" d="M32 5v10M32 49v10M5 32h10M49 32h10M13 13l7 7M44 44l7 7M51 13l-7 7M20 44l-7 7"></path></svg></span>
+              <span class="observed-layer-label">日照時間</span>
+            </button>
+          </div>
+          <div id="observedDailySequenceControl" class="observed-daily-sequence" hidden>
+            <span>日別表示</span>
+            <div id="observedDailySequenceButtons" class="observed-daily-sequence-buttons" aria-label="最高・最低気温の送り方">
+              <button class="active" type="button" data-daily-sequence="both" aria-pressed="true">最低・最高</button>
+              <button type="button" data-daily-sequence="max" aria-pressed="false">最高のみ</button>
+              <button type="button" data-daily-sequence="min" aria-pressed="false">最低のみ</button>
+            </div>
+          </div>
+        </div>
+
+        <label class="visually-hidden">
+          <span>気温要素</span>
+          <select id="elementSelect">
+            <option value="max">最高気温</option>
+            <option value="min">最低気温</option>
+          </select>
+        </label>
+
+        <div class="control-block">
+          <span>比較</span>
+          <select id="modeSelect" class="visually-hidden" aria-label="比較表示">
+            <option value="value">差分なし</option>
+            <option value="anomaly">平均との差</option>
+            <option value="previous">前日差</option>
+          </select>
+          <div id="modeButtons" class="mode-buttons" aria-label="比較表示">
+            <button type="button" data-mode="anomaly">平均との差</button>
+            <button type="button" data-mode="previous">前日差</button>
+          </div>
+        </div>
+
+        <label>
+          <span>平均期間</span>
+          <select id="periodSelect">
+            <option value="normal">気象庁平年値 1991-2020</option>
+            <option value="30">過去30年 1996-2025</option>
+            <option value="20">過去20年 2006-2025</option>
+            <option value="10">過去10年 2016-2025</option>
+            <option value="5">過去5年 2021-2025</option>
+            <option value="3">過去3年 2023-2025</option>
+          </select>
+        </label>
+
+        <div class="toggle-row extreme-actions">
+          <button id="recordMarkersButton" type="button" aria-pressed="false">気温記録更新</button>
+          <button id="rankingPanelButton" type="button" aria-pressed="false">気温ランキング</button>
+        </div>
+
+        <div class="map-display-quick">
+          <label class="check-row">
+            <input id="placeLabelsToggle" type="checkbox" checked />
+            <span>地名を表示</span>
+          </label>
+          <label class="check-row">
+            <input id="tooltipToggle" type="checkbox" checked />
+            <span>ツールチップ</span>
+          </label>
+        </div>
+
+        <div class="toggle-row share-actions share-actions-two">
+          <button id="downloadButton" type="button">画像保存</button>
+          <button id="copyLinkButton" type="button">リンクコピー</button>
+        </div>
+        <p id="copyLinkStatus" class="copy-link-status" role="status" aria-live="polite"></p>
+
+        <label class="visually-hidden">
+          <span>対象</span>
+          <select id="targetSelect">
+            <option value="tomorrow">明日</option>
+          </select>
+        </label>
+
+        <details class="map-layer-settings weather-map-settings" open>
+          <summary>天気図を表示</summary>
+          <div class="map-layer-settings-body">
+            <label class="check-row">
+              <input id="weatherMapButton" type="checkbox" />
+              <span>天気図を重ねる</span>
+            </label>
+            <div id="weatherMapControls" class="weather-map-controls" hidden>
+              <label>
+                <span>天気図</span>
+                <select id="weatherMapKindSelect">
+                  <option value="now">実況</option>
+                  <option value="ft24">24時間予想図</option>
+                  <option value="ft48">48時間予想図</option>
+                </select>
+              </label>
+              <label class="weather-map-time-control">
+                <span>実況日時</span>
+                <select id="weatherMapTimeSelect" aria-label="実況天気図の対象時刻"></select>
+              </label>
+              <label class="opacity-control">
+                <span>天気図の濃さ</span>
+                <input id="weatherMapOpacityRange" type="range" min="0" max="100" step="5" value="75" />
+                <output id="weatherMapOpacityValue">75%</output>
+              </label>
+              <p id="weatherMapStatus" class="weather-map-status" role="status" aria-live="polite"></p>
+            </div>
+          </div>
+        </details>
+
+        <details class="map-layer-settings" open>
+          <summary>地図を表示</summary>
+          <div class="map-layer-settings-body">
+            <label class="check-row">
+              <input id="detailMapToggle" type="checkbox" />
+              <span>詳細地図（市町村境界）</span>
+            </label>
+            <label class="opacity-control subordinate-control">
+              <span>詳細地図の濃さ</span>
+              <input id="detailMapOpacityRange" type="range" min="0" max="100" step="5" value="70" disabled />
+              <output id="detailMapOpacityValue">70%</output>
+            </label>
+            <label class="opacity-control">
+              <span>気象レイヤの濃さ</span>
+              <input id="weatherOpacityRange" type="range" min="0" max="100" step="5" value="85" />
+              <output id="weatherOpacityValue">85%</output>
+            </label>
+            <label class="check-row">
+              <input id="terrainToggle" type="checkbox" />
+              <span>地形</span>
+            </label>
+            <label class="terrain-style-control subordinate-control">
+              <span>地形表示</span>
+              <select id="terrainStyleSelect" disabled>
+                <option value="color">カラー</option>
+                <option value="mono">白黒</option>
+              </select>
+            </label>
+            <label class="opacity-control subordinate-control">
+              <span>地形の濃さ</span>
+              <input id="terrainOpacityRange" type="range" min="0" max="100" step="5" value="35" disabled />
+              <output id="terrainOpacityValue">35%</output>
+            </label>
+          </div>
+        </details>
+
+        <section class="readout">
+          <h2>地点詳細</h2>
+          <dl>
+            <div><dt>経度</dt><dd id="lonValue">--</dd></div>
+            <div><dt>緯度</dt><dd id="latValue">--</dd></div>
+            <div><dt>表示値</dt><dd id="mapValue">--</dd></div>
+            <div id="baseValueRow"><dt>元データ値</dt><dd id="forecastValue">--</dd></div>
+            <div><dt>平均との差</dt><dd id="anomalyValue">--</dd></div>
+          </dl>
+        </section>
+
+        <section class="notes">
+          <h2>表示情報</h2>
+          <p id="statusText">読み込み中</p>
+          <p>ドラッグで移動、ホイールで拡大縮小できます。実況と前日差は観測地点値を同じ格子へIDW補間した表示です。</p>
+        </section>
+      </aside>
+
+      <section class="map-panel">
+        <section class="timeline-control map-timeline" aria-label="対象時刻">
+          <div class="timeline-row">
+            <button id="timelinePrevButton" type="button" aria-label="前へ">◀</button>
+            <div class="timeline-range-wrap">
+              <div id="timelineTicks" class="timeline-ticks" aria-hidden="true"></div>
+              <input id="timelineRange" type="range" min="0" max="1" step="1" value="1" />
+            </div>
+            <button id="timelineNextButton" type="button" aria-label="次へ">▶</button>
+          </div>
+          <div class="timeline-labels bottom">
+            <span id="timelineMinLabel">18日最低</span>
+            <span id="timelineMaxLabel">18日最高</span>
+          </div>
+        </section>
+        <div class="canvas-wrap">
+          <canvas id="mapCanvas" width="1500" height="1050"></canvas>
+          <div id="legendResizeHandles" class="legend-resize-handles" aria-label="凡例の大きさを変更" hidden>
+            <div class="legend-resize-handle nw" data-legend-resize="nw" role="separator" aria-label="凡例を左上から拡大縮小"></div>
+            <div class="legend-resize-handle ne" data-legend-resize="ne" role="separator" aria-label="凡例を右上から拡大縮小"></div>
+            <div class="legend-resize-handle sw" data-legend-resize="sw" role="separator" aria-label="凡例を左下から拡大縮小"></div>
+            <div class="legend-resize-handle se" data-legend-resize="se" role="separator" aria-label="凡例を右下から拡大縮小"></div>
+          </div>
+          <div id="mapStamp" class="map-stamp" aria-live="polite">
+            <div id="mapStampMain" class="map-stamp-main">--</div>
+            <div id="mapStampSub" class="map-stamp-sub">--</div>
+          </div>
+          <div class="map-zoom-controls" aria-label="地図操作">
+            <button id="zoomInButton" type="button" title="拡大" aria-label="拡大">＋</button>
+            <div class="zoom-track" aria-hidden="true">
+              <div class="zoom-thumb"></div>
+            </div>
+            <button id="zoomOutButton" type="button" title="縮小" aria-label="縮小">−</button>
+            <button id="fitButton" type="button" title="全体表示" aria-label="全体表示">全</button>
+          </div>
+          <div id="dataNotice" class="data-notice" hidden></div>
+          <div class="mobile-map-hint">1本指で移動・2本指で拡大縮小</div>
+          <div id="tooltip" class="tooltip" hidden></div>
+          <section id="recordPanel" class="ranking-panel record-panel" hidden aria-label="気温記録更新"></section>
+          <section id="rankingPanel" class="ranking-panel" hidden aria-label="気温ランキング"></section>
+          <section id="pointChartPanel" class="point-chart-panel" hidden aria-label="地点の気温変化">
+            <div class="point-chart-head">
+              <div>
+                <h3 id="pointChartTitle">地点の気温変化</h3>
+                <p id="pointChartMeta" hidden>--</p>
+              </div>
+              <button id="pointChartCloseButton" type="button" aria-label="閉じる">×</button>
+            </div>
+            <div class="point-chart-controls">
+              <div id="pointChartSourceButtons" class="point-chart-source" aria-label="実況または予測">
+                <button type="button" data-chart-source="observed" class="active">実況</button>
+                <button type="button" data-chart-source="forecast">予測</button>
+              </div>
+              <div id="pointChartTypeButtons" class="point-chart-type" aria-label="グラフ種別">
+                <button type="button" data-chart-type="realtime" class="active">10分ごと</button>
+                <button type="button" data-chart-type="daily">最低・最高気温</button>
+              </div>
+              <div id="pointChartRangeButtons" class="point-chart-range" aria-label="表示期間">
+                <button type="button" data-days="1">1日</button>
+                <button type="button" data-days="3">3日</button>
+                <button type="button" data-days="7" class="active">7日</button>
+              </div>
+              <label class="point-chart-average">
+                <input id="pointChartAverageToggle" type="checkbox" checked />
+                <span>平均値</span>
+              </label>
+            </div>
+            <canvas id="pointChartCanvas" width="560" height="250"></canvas>
+            <div id="pointChartTooltip" class="point-chart-tooltip" hidden></div>
+            <div id="pointChartLegend" class="point-chart-legend"></div>
+            <div class="panel-resize-handle nw" data-panel-resize="point" data-panel-corner="nw" role="separator" aria-label="左上からグラフの大きさを変更"></div>
+            <div class="panel-resize-handle ne" data-panel-resize="point" data-panel-corner="ne" role="separator" aria-label="右上からグラフの大きさを変更"></div>
+            <div class="panel-resize-handle sw" data-panel-resize="point" data-panel-corner="sw" role="separator" aria-label="左下からグラフの大きさを変更"></div>
+            <div class="panel-resize-handle se" data-panel-resize="point" data-panel-corner="se" role="separator" aria-label="右下からグラフの大きさを変更"></div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <div id="dailyMaxRaceBackdrop" class="race-modal-backdrop" hidden>
+      <section id="dailyMaxRaceModal" class="race-modal" role="dialog" aria-modal="true" aria-labelledby="dailyMaxRaceTitle" tabindex="-1">
+        <header class="race-modal-head">
+          <div class="race-modal-title">
+            <p class="race-kicker">アメダス10分値＋気象庁公表の日極値</p>
+            <div class="race-modal-title-line">
+              <h2 id="dailyMaxRaceTitle"><span class="race-title-badge"><span class="race-title-badge-mark" aria-hidden="true">NW</span><span>実況</span></span><span id="dailyMaxRaceTitleText">最高気温ランキング</span></h2>
+              <div id="dailyMaxRaceElementSwitch" class="race-element-switch" role="group" aria-label="最高気温と最低気温の切り替え">
+                <button type="button" data-race-element="max" aria-pressed="true">最高気温</button>
+                <button type="button" data-race-element="min" aria-pressed="false">最低気温</button>
+              </div>
+              <label class="race-date-picker" aria-label="対象日">
+                <select id="dailyMaxRaceDateSelect"><option value="">----年--月--日</option></select>
+              </label>
+            </div>
+            <p id="dailyMaxRaceSummary">日付と最高・最低を切り替えて、過去7日分の推移を再生できます</p>
+          </div>
+          <div class="race-toolbar" aria-label="アニメーション操作">
+            <div class="race-playback-buttons" role="group" aria-label="時刻を移動">
+              <button id="dailyMaxRaceRestartButton" class="race-jump-button" type="button" aria-label="開始時刻へ" title="開始時刻へ"><span aria-hidden="true">|←</span></button>
+              <button id="dailyMaxRaceStepBackButton" class="race-step-button" type="button" aria-label="10分戻る" title="10分戻る"><span class="race-step-long" aria-hidden="true">−10分</span><span class="race-step-short" aria-hidden="true">−10</span></button>
+              <button id="dailyMaxRacePlayButton" class="primary" type="button" aria-pressed="false"><span class="race-play-symbol" aria-hidden="true">▶</span><span class="race-play-text">再生</span></button>
+              <button id="dailyMaxRaceStepForwardButton" class="race-step-button" type="button" aria-label="10分進む" title="10分進む"><span class="race-step-long" aria-hidden="true">＋10分</span><span class="race-step-short" aria-hidden="true">＋10</span></button>
+              <button id="dailyMaxRaceLatestButton" class="race-jump-button" type="button" aria-label="終了時刻へ" title="終了時刻へ"><span aria-hidden="true">→|</span></button>
+            </div>
+            <label>速さ
+              <select id="dailyMaxRaceSpeedSelect">
+                <option value="0.5">0.5倍</option>
+                <option value="1" selected>1倍</option>
+                <option value="2">2倍</option>
+                <option value="4">4倍</option>
+              </select>
+            </label>
+            <label>表示
+              <select id="dailyMaxRaceCountSelect">
+                <option value="10">上位10地点</option>
+                <option value="20">上位20地点</option>
+                <option value="25" selected>上位25地点</option>
+                <option value="30">上位30地点</option>
+                <option value="35">上位35地点</option>
+                <option value="50">上位50地点</option>
+                <option value="100">上位100地点</option>
+              </select>
+            </label>
+            <button id="dailyMaxRaceRefreshButton" class="race-refresh-button" type="button" aria-label="最新データを再取得" title="この画面のまま最新データを再取得">
+              <span class="race-refresh-symbol" aria-hidden="true">↻</span><span class="race-refresh-text" aria-live="polite">更新</span>
+            </button>
+          </div>
+          <button id="dailyMaxRaceCloseButton" type="button" aria-label="アニメーションを閉じる">×</button>
+        </header>
+        <div id="dailyMaxRaceRegionLegend" class="race-region-legend" aria-label="地域別の色"></div>
+        <div class="race-progress-row">
+          <time id="dailyMaxRaceTime" datetime="">--:--</time>
+          <div class="race-time-slider">
+            <div id="dailyMaxRaceTimeTicks" class="race-time-ticks" aria-hidden="true"></div>
+            <input id="dailyMaxRaceRange" type="range" min="0" max="0" step="1" value="0" aria-label="表示時刻" />
+          </div>
+          <div class="race-share-actions" role="group" aria-label="現在のランキングを共有">
+            <button id="dailyMaxRaceShareUrlButton" class="race-share-button" type="button" aria-label="このランキング画面の共有URLをコピー" title="このランキング画面へ直接開くURLをコピー">
+              <span class="race-share-symbol" aria-hidden="true">↗</span><span class="race-share-text" aria-live="polite">共有URL</span>
+            </button>
+            <button id="dailyMaxRaceShareImageButton" class="race-share-button" type="button" aria-label="現在のランキング画像をコピー" title="現在表示中のランキングをPNG画像としてコピー">
+              <span class="race-share-symbol race-share-image-symbol" aria-hidden="true">▧</span><span class="race-share-text" aria-live="polite">画像</span>
+            </button>
+            <button id="dailyMaxRaceVideoButton" class="race-share-button race-video-button" type="button" aria-expanded="false" aria-controls="dailyMaxRaceVideoPanel" aria-label="ランキング動画の範囲を選ぶ" title="開始・終了時刻を選んでランキング動画をダウンロード">
+              <span class="race-share-symbol race-share-video-symbol" aria-hidden="true">▶</span><span class="race-share-text" aria-live="polite">動画</span>
+            </button>
+            <section id="dailyMaxRaceVideoPanel" class="race-video-panel" aria-label="動画ダウンロード" hidden>
+              <div class="race-video-panel-head">
+                <div><strong>動画ダウンロード</strong><small>表示中の日付・気温・速さを使用</small></div>
+                <button id="dailyMaxRaceVideoCloseButton" type="button" aria-label="動画範囲の設定を閉じる">×</button>
+              </div>
+              <label class="race-video-format">
+                画角
+                <select id="dailyMaxRaceVideoFormatSelect" aria-label="動画の画角">
+                  <option value="landscape" selected>PC横 16:9（1920×1080）</option>
+                  <option value="portrait">スマホ縦 9:16（1080×1920）</option>
+                </select>
+              </label>
+              <div class="race-video-range">
+                <label>開始<select id="dailyMaxRaceVideoStartSelect" aria-label="動画の開始時刻"></select></label>
+                <span aria-hidden="true">→</span>
+                <label>終了<select id="dailyMaxRaceVideoEndSelect" aria-label="動画の終了時刻"></select></label>
+              </div>
+              <p id="dailyMaxRaceVideoMeta" class="race-video-meta">範囲を選択してください</p>
+              <button id="dailyMaxRaceVideoExportButton" class="race-video-export-button" type="button">
+                <span aria-hidden="true">↓</span><span class="race-video-export-text" aria-live="polite">動画を作成</span>
+              </button>
+            </section>
+          </div>
+        </div>
+        <div id="dailyMaxRaceLoading" class="race-loading" role="status">ランキングデータを読み込んでいます…</div>
+        <div id="dailyMaxRaceError" class="race-error" role="alert" hidden></div>
+        <div id="dailyMaxRaceChart" class="race-chart" hidden>
+          <div id="dailyMaxRaceAxis" class="race-axis" aria-hidden="true"></div>
+          <div class="race-chart-scroll">
+            <div id="dailyMaxRaceBars" class="race-bars" role="list" aria-label="最高気温ランキング"></div>
+          </div>
+          <aside class="race-clock-panel" aria-hidden="true">
+            <div class="race-live-brand">
+              <span class="race-live-brand-mark">NW</span>
+              <span class="race-live-brand-copy">
+                <strong>NatureWxLab</strong>
+                <small>天気分布予報プラス</small>
+              </span>
+            </div>
+            <div class="race-clock-core">
+              <div class="race-clock-heading">
+                <span class="race-clock-figure">
+                  <span id="dailyMaxRaceClockFace" class="race-clock-face"><i></i><b></b></span>
+                  <span id="dailyMaxRaceClockPeriod" class="race-clock-period">--</span>
+                </span>
+                <span class="race-clock-calendar">
+                  <span id="dailyMaxRaceClockDate" class="race-clock-date">--月--日</span>
+                </span>
+              </div>
+              <strong id="dailyMaxRaceClockTime" class="race-clock-time">
+                <span id="dailyMaxRaceClockHour">--</span><span class="race-clock-separator">:</span><span id="dailyMaxRaceClockMinute">--</span>
+              </strong>
+              <span id="dailyMaxRaceClockCaption" class="race-clock-caption">までの最高</span>
+              <span id="dailyMaxRaceClockRange" class="race-clock-range">--〜--℃表示</span>
+            </div>
+            <div class="race-live-program">
+              <small>10 MINUTE LIVE RACE</small>
+              <span>10分ごとに追う</span>
+              <strong class="race-live-program-max">全国最高気温ランキング</strong>
+              <strong class="race-live-program-min">全国最低気温ランキング</strong>
+              <b>naturewxlab.com</b>
+            </div>
+          </aside>
+        </div>
+        <footer class="race-modal-foot">
+          <span id="dailyMaxRaceMeta">--</span>
+          <span id="dailyMaxRaceFootnote">順位の動きはアメダス10分値。気象庁公表の日極値は観測時分以後の10分枠へ反映します。公表更新まで遅れあり・欠測補間なし。</span>
+        </footer>
+      </section>
+    </div>
+
+    <div id="fullRankingBackdrop" class="full-ranking-backdrop" hidden>
+      <section id="fullRankingModal" class="full-ranking-modal" role="dialog" aria-modal="true" aria-labelledby="fullRankingTitle" tabindex="-1">
+        <header class="full-ranking-head">
+          <div class="full-ranking-title">
+            <h2 id="fullRankingTitle"><span class="full-ranking-title-badge"><span aria-hidden="true">NW</span><b id="fullRankingSourceLabel">実況</b></span><span id="fullRankingTitleText">全国最高気温ランキング</span></h2>
+            <div class="full-ranking-title-support">
+              <span id="fullRankingForecastContext" class="full-ranking-forecast-context" hidden></span>
+              <div id="fullRankingRegionLegend" class="full-ranking-region-legend" aria-label="地域別の色"></div>
+            </div>
+          </div>
+          <div class="full-ranking-search">
+            <label class="visually-hidden" for="fullRankingSearchInput">市町村・観測地点を検索</label>
+            <div class="full-ranking-search-box">
+              <input id="fullRankingSearchInput" type="search" placeholder="市町村・地点を検索" autocomplete="off" aria-autocomplete="list" aria-controls="fullRankingSearchSuggestions" aria-expanded="false" />
+              <button id="fullRankingSearchClearButton" type="button" aria-label="検索語を消す">×</button>
+            </div>
+            <div id="fullRankingSearchSuggestions" class="full-ranking-search-suggestions" role="listbox" hidden></div>
+            <p id="fullRankingSearchStatus" class="full-ranking-search-status" aria-live="polite">市町村名や観測地点名を入力すると、該当順位へ移動できます。</p>
+          </div>
+          <div class="full-ranking-controls">
+            <div id="fullRankingElementSwitch" class="full-ranking-element-switch" role="group" aria-label="最高気温と最低気温の切り替え">
+              <button type="button" data-full-ranking-element="max" aria-pressed="true">最高</button>
+              <button type="button" data-full-ranking-element="min" aria-pressed="false">最低</button>
+            </div>
+            <div class="full-ranking-date-controls">
+              <label class="full-ranking-date-picker" aria-label="対象日">
+                <select id="fullRankingDateSelect"><option value="">----年--月--日</option></select>
+              </label>
+              <div id="fullRankingDateNavigation" class="full-ranking-date-navigation" role="group" aria-label="ランキングの日付移動">
+                <button type="button" data-full-ranking-date-action="first" aria-label="期間の最初の日へ" title="期間の最初の日へ">｜←</button>
+                <button type="button" data-full-ranking-date-action="previous" aria-label="前の日へ" title="前の日へ">←</button>
+                <button type="button" class="is-today" data-full-ranking-date-action="today" aria-label="今日へ" title="今日へ">今日</button>
+                <button type="button" data-full-ranking-date-action="next" aria-label="次の日へ" title="次の日へ">→</button>
+                <button type="button" data-full-ranking-date-action="last" aria-label="期間の最後の日へ" title="期間の最後の日へ">→｜</button>
+              </div>
+            </div>
+            <div class="full-ranking-actions" role="group" aria-label="全国ランキングの操作">
+              <button id="fullRankingRefreshButton" type="button" aria-label="最新データへ更新" title="最新データへ更新"><span aria-hidden="true">↻</span><span class="full-ranking-action-text">更新</span></button>
+              <button id="fullRankingShareUrlButton" type="button" aria-label="この全国ランキングへ直接開くURLをコピー" title="この全国ランキングへ直接開くURLをコピー"><span aria-hidden="true">↗</span><span class="full-ranking-action-text">リンク取得</span></button>
+              <button id="fullRankingShareImageButton" type="button" aria-label="表示中の全国ランキングをそのままPNG画像としてコピー" title="表示中の全国ランキングをそのままPNG画像としてコピー"><span aria-hidden="true">▧</span><span class="full-ranking-action-text">画像</span></button>
+            </div>
+          </div>
+          <button id="fullRankingCloseButton" type="button" aria-label="全国ランキングを閉じる">×</button>
+          <p id="fullRankingSummary" class="visually-hidden">1位から最下位まで、地域の色と観測時刻をそえて表示します</p>
+        </header>
+        <div id="fullRankingLoading" class="full-ranking-loading" role="status">全国ランキングを読み込んでいます…</div>
+        <div id="fullRankingError" class="full-ranking-error" role="alert" hidden></div>
+        <div id="fullRankingList" class="full-ranking-list" hidden>
+          <div class="full-ranking-row full-ranking-list-head" role="row">
+            <span>全国順位</span>
+            <span>地域・市町村・観測地点</span>
+            <span id="fullRankingReadingHeading">気温・観測日時</span>
+            <span>横棒・1位との差</span>
+            <span>県内順位</span>
+            <span>平年差</span>
+            <span>前日差</span>
+            <span>観測史上1位</span>
+            <span id="fullRankingMonthRecordHeading">月の1位</span>
+            <span>統計開始年</span>
+          </div>
+          <div id="fullRankingRows" class="full-ranking-rows" role="rowgroup"></div>
+        </div>
+        <footer class="full-ranking-foot">
+          <span id="fullRankingMeta">--</span>
+          <span id="fullRankingFootnote">記録更新は気象庁「毎日の観測史上1位の値 更新状況」（タイ記録を含む）。資料不足・欠測は「—」とします。</span>
+        </footer>
+      </section>
+    </div>
+
+    <footer>
+      本ツールは気象庁の公式サービスではありません。防災判断には気象庁等の公式情報を利用してください。<br />
+      出典: <a href="https://www.jma.go.jp/" target="_blank" rel="noopener noreferrer">気象庁ホームページ</a>の「天気分布予報」「推計気象分布」「天気図」日別値・アメダス10分値を加工して作成（格子化、IDW補間、平均との差・前日差の算出を含む）。<br />
+      地図境界: dataofjapan/land（国土地理院「地球地図日本」を加工して作成）、Natural Earth（Public Domain）。詳細地図・地形: <a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener noreferrer">国土地理院「地理院タイル」</a>。色別標高図の海域部は海上保安庁海洋情報部の資料を使用して作成。標準地図の小縮尺表示にはGEBCO、海上保安庁、VMAP0由来の資料を含みます。
+    </footer>
+
+  <script src="./app.js?v=20260825-extreme-heat-40c2" defer></script>
+  </body>
+</html>
